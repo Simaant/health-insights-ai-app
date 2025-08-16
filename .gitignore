@@ -2,3 +2,6 @@ frontend/.next/
 venv/
 frontend/node_modules/
 frontend/.next/
+.env
+backend/.env
+frontend/.env.local
