@@ -63,22 +63,35 @@ export default function Chat() {
         },
       });
       
-      if (response.data) {
+      if (response.data && response.data.id) {
         await loadSessionMessages(response.data.id);
       } else if (sessions.length > 0) {
         const latestSession = sessions[sessions.length - 1];
         await loadSessionMessages(latestSession.id);
+      } else {
+        console.log('No sessions found, starting fresh');
+        setCurrentSession(null);
+        setMessages([]);
       }
     } catch (error) {
       console.error('Error loading last session:', error);
       if (sessions.length > 0) {
         const latestSession = sessions[sessions.length - 1];
         await loadSessionMessages(latestSession.id);
+      } else {
+        console.log('No sessions available, starting fresh');
+        setCurrentSession(null);
+        setMessages([]);
       }
     }
   };
 
   const loadSessionMessages = async (sessionId: string) => {
+    if (!sessionId) {
+      console.log('No session ID provided, skipping message load');
+      return;
+    }
+    
     try {
       const token = localStorage.getItem('token');
       const response = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000'}/chat/sessions/${sessionId}/messages`, {
@@ -100,8 +113,13 @@ export default function Chat() {
       if (window.innerWidth < 768) {
         setSidebarOpen(false);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error loading session messages:', error);
+      if (error.response?.status === 404) {
+        console.log('Session not found, clearing current session');
+        setCurrentSession(null);
+        setMessages([]);
+      }
     }
   };
 
