@@ -39,7 +39,7 @@ export default function WearableData({ onDataUpdate }: WearableDataProps) {
   const fetchSummary = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://127.0.0.1:8000/wearable/summary', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000'}/wearable/summary`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -61,7 +61,7 @@ export default function WearableData({ onDataUpdate }: WearableDataProps) {
     
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://127.0.0.1:8000/wearable/add', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000'}/wearable/add`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -39,7 +39,7 @@ export default function Chat() {
   const loadChatSessions = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://127.0.0.1:8000/chat/sessions', {
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000'}/chat/sessions`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -57,7 +57,7 @@ export default function Chat() {
   const loadLastSession = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://127.0.0.1:8000/chat/last-session', {
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000'}/chat/last-session`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -81,7 +81,7 @@ export default function Chat() {
   const loadSessionMessages = async (sessionId: string) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`http://127.0.0.1:8000/chat/sessions/${sessionId}/messages`, {
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000'}/chat/sessions/${sessionId}/messages`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -108,7 +108,7 @@ export default function Chat() {
   const createNewSession = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.post('http://127.0.0.1:8000/chat/sessions', {
+      const response = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000'}/chat/sessions`, {
         title: `New Chat ${new Date().toLocaleString()}`
       }, {
         headers: {
@@ -146,7 +146,7 @@ export default function Chat() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.post(`http://127.0.0.1:8000/chat/sessions/${currentSession.id}/messages`, {
+      const response = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000'}/chat/sessions/${currentSession.id}/messages`, {
         content: inputMessage
       }, {
         headers: {

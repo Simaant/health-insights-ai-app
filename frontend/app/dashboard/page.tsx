@@ -42,7 +42,7 @@ export default function DashboardPage() {
     // Verify token and get user info
     const verifyAuth = async () => {
       try {
-        const response = await axios.get(`http://127.0.0.1:8000/auth/me`, {
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000'}/auth/me`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -64,7 +64,7 @@ export default function DashboardPage() {
   const loadChatSessions = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://127.0.0.1:8000/chat/sessions', {
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000'}/chat/sessions`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -82,7 +82,7 @@ export default function DashboardPage() {
   const createNewSession = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.post('http://127.0.0.1:8000/chat/sessions', {
+      const response = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000'}/chat/sessions`, {
         title: `New Chat ${new Date().toLocaleString()}`
       }, {
         headers: {
@@ -108,7 +108,7 @@ export default function DashboardPage() {
     
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`http://127.0.0.1:8000/chat/sessions/${sessionId}`, {
+      await axios.delete(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000'}/chat/sessions/${sessionId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -128,7 +128,7 @@ export default function DashboardPage() {
   const loadSessionMessages = async (sessionId: string) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`http://127.0.0.1:8000/chat/sessions/${sessionId}/messages`, {
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000'}/chat/sessions/${sessionId}/messages`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
