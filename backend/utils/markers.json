@@ -1,0 +1,42 @@
+{
+  "LDL": {
+    "unit": "mg/dL",
+    "normal": { "max": 100 },
+    "aliases": ["Low-Density Lipoprotein", "LDL Cholesterol"]
+  },
+  "HDL": {
+    "unit": "mg/dL",
+    "normal": { "min": 40 },
+    "aliases": ["High-Density Lipoprotein", "HDL Cholesterol"]
+  },
+  "Glucose": {
+    "unit": "mg/dL",
+    "normal": { "min": 70, "max": 100 },
+    "aliases": ["Blood Glucose", "Fasting Glucose", "Blood Sugar"]
+  },
+  "Triglycerides": {
+    "unit": "mg/dL",
+    "normal": { "max": 150 },
+    "aliases": ["Triacylglycerols"]
+  },
+  "TSH": {
+    "unit": "µIU/mL",
+    "normal": { "min": 0.4, "max": 4.0 },
+    "aliases": ["Thyroid-Stimulating Hormone"]
+  },
+  "CRP": {
+    "unit": "mg/L",
+    "normal": { "max": 3.0 },
+    "aliases": ["C-Reactive Protein"]
+  },
+  "Vitamin D": {
+    "unit": "ng/mL",
+    "normal": { "min": 30, "max": 100 },
+    "aliases": ["25-Hydroxy Vitamin D", "Vit D"]
+  },
+  "FERRITIN": {
+    "unit": "ng/mL",
+    "normal": { "min": 38, "max": 380 },
+    "aliases": ["Ferritin", "Serum Ferritin"]
+  }
+}

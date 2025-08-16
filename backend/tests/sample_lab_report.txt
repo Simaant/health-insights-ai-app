@@ -1,0 +1,9 @@
+Patient Name: John Doe
+Date: 2025-08-07
+
+LDL: 160 mg/dL
+HDL: 38 mg/dL
+Glucose: 112 mg/dL
+CRP: 4.1 mg/L
+TSH: 5.3 µIU/mL
+Vitamin D: 22 ng/mL

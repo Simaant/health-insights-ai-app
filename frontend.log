@@ -1,0 +1,622 @@
+
+> health-insights-frontend@1.0.0 dev
+> next dev
+
+- ready started server on 0.0.0.0:3000, url: http://localhost:3000
+- [36minfo[39m Loaded env from /Users/simaant/Projects/health-insights-ai-app/frontend/.env.local
+- [35mevent[39m compiled client and server successfully in 96 ms (20 modules)
+(node:29061) [DEP0060] DeprecationWarning: The `util._extend` API is deprecated. Please use Object.assign() instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+- [36mwait[39m compiling /page (client and server)...
+- [35mevent[39m compiled client and server successfully in 323 ms (415 modules)
+- [36mwait[39m compiling /auth/login/page (client and server)...
+- [33mwarn[39m ./node_modules/follow-redirects/debug.js
+Module not found: Can't resolve 'debug' in '/Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/follow-redirects'
+Did you mean './debug'?
+Requests that should resolve in the current directory need to start with './'.
+Requests that start with a name are treated as module requests and resolve within module directories (node_modules, /Users/simaant/Projects/health-insights-ai-app/frontend).
+If changing the source code is not an option there is also a resolve options called 'preferRelative' which tries to resolve these kind of requests in the current directory too.
+
+Import trace for requested module:
+./node_modules/follow-redirects/debug.js
+./node_modules/follow-redirects/index.js
+./node_modules/axios/lib/adapters/http.js
+./node_modules/axios/lib/adapters/adapters.js
+./node_modules/axios/lib/axios.js
+./node_modules/axios/index.js
+./app/auth/login/page.tsx
+- [33mwarn[39m ./node_modules/follow-redirects/debug.js
+Module not found: Can't resolve 'debug' in '/Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/follow-redirects'
+Did you mean './debug'?
+Requests that should resolve in the current directory need to start with './'.
+Requests that start with a name are treated as module requests and resolve within module directories (node_modules, /Users/simaant/Projects/health-insights-ai-app/frontend).
+If changing the source code is not an option there is also a resolve options called 'preferRelative' which tries to resolve these kind of requests in the current directory too.
+
+Import trace for requested module:
+./node_modules/follow-redirects/debug.js
+./node_modules/follow-redirects/index.js
+./node_modules/axios/lib/adapters/http.js
+./node_modules/axios/lib/adapters/adapters.js
+./node_modules/axios/lib/axios.js
+./node_modules/axios/index.js
+./app/auth/login/page.tsx
+- [36mwait[39m compiling /dashboard/page (client and server)...
+- [33mwarn[39m ./node_modules/follow-redirects/debug.js
+Module not found: Can't resolve 'debug' in '/Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/follow-redirects'
+Did you mean './debug'?
+Requests that should resolve in the current directory need to start with './'.
+Requests that start with a name are treated as module requests and resolve within module directories (node_modules, /Users/simaant/Projects/health-insights-ai-app/frontend).
+If changing the source code is not an option there is also a resolve options called 'preferRelative' which tries to resolve these kind of requests in the current directory too.
+
+Import trace for requested module:
+./node_modules/follow-redirects/debug.js
+./node_modules/follow-redirects/index.js
+./node_modules/axios/lib/adapters/http.js
+./node_modules/axios/lib/adapters/adapters.js
+./node_modules/axios/lib/axios.js
+./node_modules/axios/index.js
+./app/auth/login/page.tsx
+- [33mwarn[39m ./node_modules/follow-redirects/debug.js
+Module not found: Can't resolve 'debug' in '/Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/follow-redirects'
+Did you mean './debug'?
+Requests that should resolve in the current directory need to start with './'.
+Requests that start with a name are treated as module requests and resolve within module directories (node_modules, /Users/simaant/Projects/health-insights-ai-app/frontend).
+If changing the source code is not an option there is also a resolve options called 'preferRelative' which tries to resolve these kind of requests in the current directory too.
+
+Import trace for requested module:
+./node_modules/follow-redirects/debug.js
+./node_modules/follow-redirects/index.js
+./node_modules/axios/lib/adapters/http.js
+./node_modules/axios/lib/adapters/adapters.js
+./node_modules/axios/lib/axios.js
+./node_modules/axios/index.js
+./app/auth/login/page.tsx
+- [36mwait[39m compiling /debug/page (client and server)...
+- [31merror[39m ./app/debug/page.tsx:4:0
+[31m[1mModule not found[22m[39m: Can't resolve '[32m@/contexts/AuthContext[39m'
+[0m [90m 2 | [39m[0m
+[0m [90m 3 | [39m[36mimport[39m { useState } [36mfrom[39m [32m'react'[39m[33m;[39m[0m
+[0m[31m[1m>[22m[39m[90m 4 | [39m[36mimport[39m { useAuth } [36mfrom[39m [32m'@/contexts/AuthContext'[39m[33m;[39m[0m
+[0m [90m 5 | [39m[0m
+[0m [90m 6 | [39m[36mexport[39m [36mdefault[39m [36mfunction[39m [33mDebugPage[39m() {[0m
+[0m [90m 7 | [39m  [36mconst[39m [file[33m,[39m setFile] [33m=[39m useState[33m<[39m[33mFile[39m [33m|[39m [36mnull[39m[33m>[39m([36mnull[39m)[33m;[39m[0m
+
+https://nextjs.org/docs/messages/module-not-found
+- [36mwait[39m compiling /_error (client and server)...
+- [31merror[39m ./app/debug/page.tsx:4:0
+[31m[1mModule not found[22m[39m: Can't resolve '[32m@/contexts/AuthContext[39m'
+[0m [90m 2 | [39m[0m
+[0m [90m 3 | [39m[36mimport[39m { useState } [36mfrom[39m [32m'react'[39m[33m;[39m[0m
+[0m[31m[1m>[22m[39m[90m 4 | [39m[36mimport[39m { useAuth } [36mfrom[39m [32m'@/contexts/AuthContext'[39m[33m;[39m[0m
+[0m [90m 5 | [39m[0m
+[0m [90m 6 | [39m[36mexport[39m [36mdefault[39m [36mfunction[39m [33mDebugPage[39m() {[0m
+[0m [90m 7 | [39m  [36mconst[39m [file[33m,[39m setFile] [33m=[39m useState[33m<[39m[33mFile[39m [33m|[39m [36mnull[39m[33m>[39m([36mnull[39m)[33m;[39m[0m
+
+https://nextjs.org/docs/messages/module-not-found
+- [36mwait[39m compiling...
+- [33mwarn[39m ./node_modules/follow-redirects/debug.js
+Module not found: Can't resolve 'debug' in '/Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/follow-redirects'
+Did you mean './debug'?
+Requests that should resolve in the current directory need to start with './'.
+Requests that start with a name are treated as module requests and resolve within module directories (node_modules, /Users/simaant/Projects/health-insights-ai-app/frontend).
+If changing the source code is not an option there is also a resolve options called 'preferRelative' which tries to resolve these kind of requests in the current directory too.
+
+Import trace for requested module:
+./node_modules/follow-redirects/debug.js
+./node_modules/follow-redirects/index.js
+./node_modules/axios/lib/adapters/http.js
+./node_modules/axios/lib/adapters/adapters.js
+./node_modules/axios/lib/axios.js
+./node_modules/axios/index.js
+./app/dashboard/page.tsx
+- [33mwarn[39m Fast Refresh had to perform a full reload due to a runtime error.
+- [33mwarn[39m Fast Refresh had to perform a full reload due to a runtime error.
+- [33mwarn[39m ./node_modules/follow-redirects/debug.js
+Module not found: Can't resolve 'debug' in '/Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/follow-redirects'
+Did you mean './debug'?
+Requests that should resolve in the current directory need to start with './'.
+Requests that start with a name are treated as module requests and resolve within module directories (node_modules, /Users/simaant/Projects/health-insights-ai-app/frontend).
+If changing the source code is not an option there is also a resolve options called 'preferRelative' which tries to resolve these kind of requests in the current directory too.
+
+Import trace for requested module:
+./node_modules/follow-redirects/debug.js
+./node_modules/follow-redirects/index.js
+./node_modules/axios/lib/adapters/http.js
+./node_modules/axios/lib/adapters/adapters.js
+./node_modules/axios/lib/axios.js
+./node_modules/axios/index.js
+./app/dashboard/page.tsx
+- [36mwait[39m compiling /debug/page (client and server)...
+- [33mwarn[39m ./node_modules/follow-redirects/debug.js
+Module not found: Can't resolve 'debug' in '/Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/follow-redirects'
+Did you mean './debug'?
+Requests that should resolve in the current directory need to start with './'.
+Requests that start with a name are treated as module requests and resolve within module directories (node_modules, /Users/simaant/Projects/health-insights-ai-app/frontend).
+If changing the source code is not an option there is also a resolve options called 'preferRelative' which tries to resolve these kind of requests in the current directory too.
+
+Import trace for requested module:
+./node_modules/follow-redirects/debug.js
+./node_modules/follow-redirects/index.js
+./node_modules/axios/lib/adapters/http.js
+./node_modules/axios/lib/adapters/adapters.js
+./node_modules/axios/lib/axios.js
+./node_modules/axios/index.js
+./app/dashboard/page.tsx
+- [33mwarn[39m ./node_modules/follow-redirects/debug.js
+Module not found: Can't resolve 'debug' in '/Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/follow-redirects'
+Did you mean './debug'?
+Requests that should resolve in the current directory need to start with './'.
+Requests that start with a name are treated as module requests and resolve within module directories (node_modules, /Users/simaant/Projects/health-insights-ai-app/frontend).
+If changing the source code is not an option there is also a resolve options called 'preferRelative' which tries to resolve these kind of requests in the current directory too.
+
+Import trace for requested module:
+./node_modules/follow-redirects/debug.js
+./node_modules/follow-redirects/index.js
+./node_modules/axios/lib/adapters/http.js
+./node_modules/axios/lib/adapters/adapters.js
+./node_modules/axios/lib/axios.js
+./node_modules/axios/index.js
+./app/dashboard/page.tsx
+- [33mwarn[39m ./node_modules/follow-redirects/debug.js
+Module not found: Can't resolve 'debug' in '/Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/follow-redirects'
+Did you mean './debug'?
+Requests that should resolve in the current directory need to start with './'.
+Requests that start with a name are treated as module requests and resolve within module directories (node_modules, /Users/simaant/Projects/health-insights-ai-app/frontend).
+If changing the source code is not an option there is also a resolve options called 'preferRelative' which tries to resolve these kind of requests in the current directory too.
+
+Import trace for requested module:
+./node_modules/follow-redirects/debug.js
+./node_modules/follow-redirects/index.js
+./node_modules/axios/lib/adapters/http.js
+./node_modules/axios/lib/adapters/adapters.js
+./node_modules/axios/lib/axios.js
+./node_modules/axios/index.js
+./app/dashboard/page.tsx
+- [36mwait[39m compiling...
+- [33mwarn[39m ./node_modules/follow-redirects/debug.js
+Module not found: Can't resolve 'debug' in '/Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/follow-redirects'
+Did you mean './debug'?
+Requests that should resolve in the current directory need to start with './'.
+Requests that start with a name are treated as module requests and resolve within module directories (node_modules, /Users/simaant/Projects/health-insights-ai-app/frontend).
+If changing the source code is not an option there is also a resolve options called 'preferRelative' which tries to resolve these kind of requests in the current directory too.
+
+Import trace for requested module:
+./node_modules/follow-redirects/debug.js
+./node_modules/follow-redirects/index.js
+./node_modules/axios/lib/adapters/http.js
+./node_modules/axios/lib/adapters/adapters.js
+./node_modules/axios/lib/axios.js
+./node_modules/axios/index.js
+./app/dashboard/page.tsx
+- [36mwait[39m compiling...
+- [33mwarn[39m ./node_modules/follow-redirects/debug.js
+Module not found: Can't resolve 'debug' in '/Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/follow-redirects'
+Did you mean './debug'?
+Requests that should resolve in the current directory need to start with './'.
+Requests that start with a name are treated as module requests and resolve within module directories (node_modules, /Users/simaant/Projects/health-insights-ai-app/frontend).
+If changing the source code is not an option there is also a resolve options called 'preferRelative' which tries to resolve these kind of requests in the current directory too.
+
+Import trace for requested module:
+./node_modules/follow-redirects/debug.js
+./node_modules/follow-redirects/index.js
+./node_modules/axios/lib/adapters/http.js
+./node_modules/axios/lib/adapters/adapters.js
+./node_modules/axios/lib/axios.js
+./node_modules/axios/index.js
+./app/dashboard/page.tsx
+- [36mwait[39m compiling...
+- [33mwarn[39m ./node_modules/follow-redirects/debug.js
+Module not found: Can't resolve 'debug' in '/Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/follow-redirects'
+Did you mean './debug'?
+Requests that should resolve in the current directory need to start with './'.
+Requests that start with a name are treated as module requests and resolve within module directories (node_modules, /Users/simaant/Projects/health-insights-ai-app/frontend).
+If changing the source code is not an option there is also a resolve options called 'preferRelative' which tries to resolve these kind of requests in the current directory too.
+
+Import trace for requested module:
+./node_modules/follow-redirects/debug.js
+./node_modules/follow-redirects/index.js
+./node_modules/axios/lib/adapters/http.js
+./node_modules/axios/lib/adapters/adapters.js
+./node_modules/axios/lib/axios.js
+./node_modules/axios/index.js
+./app/dashboard/page.tsx
+- [36mwait[39m compiling...
+- [33mwarn[39m ./node_modules/follow-redirects/debug.js
+Module not found: Can't resolve 'debug' in '/Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/follow-redirects'
+Did you mean './debug'?
+Requests that should resolve in the current directory need to start with './'.
+Requests that start with a name are treated as module requests and resolve within module directories (node_modules, /Users/simaant/Projects/health-insights-ai-app/frontend).
+If changing the source code is not an option there is also a resolve options called 'preferRelative' which tries to resolve these kind of requests in the current directory too.
+
+Import trace for requested module:
+./node_modules/follow-redirects/debug.js
+./node_modules/follow-redirects/index.js
+./node_modules/axios/lib/adapters/http.js
+./node_modules/axios/lib/adapters/adapters.js
+./node_modules/axios/lib/axios.js
+./node_modules/axios/index.js
+./app/dashboard/page.tsx
+- [33mwarn[39m ./node_modules/follow-redirects/debug.js
+Module not found: Can't resolve 'debug' in '/Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/follow-redirects'
+Did you mean './debug'?
+Requests that should resolve in the current directory need to start with './'.
+Requests that start with a name are treated as module requests and resolve within module directories (node_modules, /Users/simaant/Projects/health-insights-ai-app/frontend).
+If changing the source code is not an option there is also a resolve options called 'preferRelative' which tries to resolve these kind of requests in the current directory too.
+
+Import trace for requested module:
+./node_modules/follow-redirects/debug.js
+./node_modules/follow-redirects/index.js
+./node_modules/axios/lib/adapters/http.js
+./node_modules/axios/lib/adapters/adapters.js
+./node_modules/axios/lib/axios.js
+./node_modules/axios/index.js
+./app/dashboard/page.tsx
+- [36mwait[39m compiling /page (client and server)...
+- [33mwarn[39m ./node_modules/follow-redirects/debug.js
+Module not found: Can't resolve 'debug' in '/Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/follow-redirects'
+Did you mean './debug'?
+Requests that should resolve in the current directory need to start with './'.
+Requests that start with a name are treated as module requests and resolve within module directories (node_modules, /Users/simaant/Projects/health-insights-ai-app/frontend).
+If changing the source code is not an option there is also a resolve options called 'preferRelative' which tries to resolve these kind of requests in the current directory too.
+
+Import trace for requested module:
+./node_modules/follow-redirects/debug.js
+./node_modules/follow-redirects/index.js
+./node_modules/axios/lib/adapters/http.js
+./node_modules/axios/lib/adapters/adapters.js
+./node_modules/axios/lib/axios.js
+./node_modules/axios/index.js
+./app/dashboard/page.tsx
+- [36mwait[39m compiling...
+- [31merror[39m ./app/dashboard/page.tsx:8:0
+[31m[1mModule not found[22m[39m: Can't resolve '[32m../../components/ManualEntry[39m'
+[0m [90m  6 | [39m[36mimport[39m [33mWearableData[39m [36mfrom[39m [32m"../../components/WearableData"[39m[33m;[39m[0m
+[0m [90m  7 | [39m[36mimport[39m [33mHealthSummary[39m [36mfrom[39m [32m"../../components/HealthSummary"[39m[33m;[39m[0m
+[0m[31m[1m>[22m[39m[90m  8 | [39m[36mimport[39m [33mManualEntry[39m [36mfrom[39m [32m"../../components/ManualEntry"[39m[33m;[39m[0m
+[0m [90m  9 | [39m[36mimport[39m axios [36mfrom[39m [32m'axios'[39m[33m;[39m[0m
+[0m [90m 10 | [39m[0m
+[0m [90m 11 | [39m[36mexport[39m [36mdefault[39m [36mfunction[39m [33mDashboardPage[39m() {[0m
+
+https://nextjs.org/docs/messages/module-not-found
+- [36mwait[39m compiling...
+- [33mwarn[39m ./node_modules/follow-redirects/debug.js
+Module not found: Can't resolve 'debug' in '/Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/follow-redirects'
+Did you mean './debug'?
+Requests that should resolve in the current directory need to start with './'.
+Requests that start with a name are treated as module requests and resolve within module directories (node_modules, /Users/simaant/Projects/health-insights-ai-app/frontend).
+If changing the source code is not an option there is also a resolve options called 'preferRelative' which tries to resolve these kind of requests in the current directory too.
+
+Import trace for requested module:
+./node_modules/follow-redirects/debug.js
+./node_modules/follow-redirects/index.js
+./node_modules/axios/lib/adapters/http.js
+./node_modules/axios/lib/adapters/adapters.js
+./node_modules/axios/lib/axios.js
+./node_modules/axios/index.js
+./app/dashboard/page.tsx
+- [36mwait[39m compiling...
+- [33mwarn[39m ./node_modules/follow-redirects/debug.js
+Module not found: Can't resolve 'debug' in '/Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/follow-redirects'
+Did you mean './debug'?
+Requests that should resolve in the current directory need to start with './'.
+Requests that start with a name are treated as module requests and resolve within module directories (node_modules, /Users/simaant/Projects/health-insights-ai-app/frontend).
+If changing the source code is not an option there is also a resolve options called 'preferRelative' which tries to resolve these kind of requests in the current directory too.
+
+Import trace for requested module:
+./node_modules/follow-redirects/debug.js
+./node_modules/follow-redirects/index.js
+./node_modules/axios/lib/adapters/http.js
+./node_modules/axios/lib/adapters/adapters.js
+./node_modules/axios/lib/axios.js
+./node_modules/axios/index.js
+./app/dashboard/page.tsx
+- [36mwait[39m compiling...
+- [33mwarn[39m ./node_modules/follow-redirects/debug.js
+Module not found: Can't resolve 'debug' in '/Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/follow-redirects'
+Did you mean './debug'?
+Requests that should resolve in the current directory need to start with './'.
+Requests that start with a name are treated as module requests and resolve within module directories (node_modules, /Users/simaant/Projects/health-insights-ai-app/frontend).
+If changing the source code is not an option there is also a resolve options called 'preferRelative' which tries to resolve these kind of requests in the current directory too.
+
+Import trace for requested module:
+./node_modules/follow-redirects/debug.js
+./node_modules/follow-redirects/index.js
+./node_modules/axios/lib/adapters/http.js
+./node_modules/axios/lib/adapters/adapters.js
+./node_modules/axios/lib/axios.js
+./node_modules/axios/index.js
+./app/dashboard/page.tsx
+- [36mwait[39m compiling...
+- [33mwarn[39m ./node_modules/follow-redirects/debug.js
+Module not found: Can't resolve 'debug' in '/Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/follow-redirects'
+Did you mean './debug'?
+Requests that should resolve in the current directory need to start with './'.
+Requests that start with a name are treated as module requests and resolve within module directories (node_modules, /Users/simaant/Projects/health-insights-ai-app/frontend).
+If changing the source code is not an option there is also a resolve options called 'preferRelative' which tries to resolve these kind of requests in the current directory too.
+
+Import trace for requested module:
+./node_modules/follow-redirects/debug.js
+./node_modules/follow-redirects/index.js
+./node_modules/axios/lib/adapters/http.js
+./node_modules/axios/lib/adapters/adapters.js
+./node_modules/axios/lib/axios.js
+./node_modules/axios/index.js
+./app/auth/login/page.tsx
+- [36mwait[39m compiling...
+- [33mwarn[39m ./node_modules/follow-redirects/debug.js
+Module not found: Can't resolve 'debug' in '/Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/follow-redirects'
+Did you mean './debug'?
+Requests that should resolve in the current directory need to start with './'.
+Requests that start with a name are treated as module requests and resolve within module directories (node_modules, /Users/simaant/Projects/health-insights-ai-app/frontend).
+If changing the source code is not an option there is also a resolve options called 'preferRelative' which tries to resolve these kind of requests in the current directory too.
+
+Import trace for requested module:
+./node_modules/follow-redirects/debug.js
+./node_modules/follow-redirects/index.js
+./node_modules/axios/lib/adapters/http.js
+./node_modules/axios/lib/adapters/adapters.js
+./node_modules/axios/lib/axios.js
+./node_modules/axios/index.js
+./app/dashboard/page.tsx
+- [36mwait[39m compiling...
+- [33mwarn[39m ./node_modules/follow-redirects/debug.js
+Module not found: Can't resolve 'debug' in '/Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/follow-redirects'
+Did you mean './debug'?
+Requests that should resolve in the current directory need to start with './'.
+Requests that start with a name are treated as module requests and resolve within module directories (node_modules, /Users/simaant/Projects/health-insights-ai-app/frontend).
+If changing the source code is not an option there is also a resolve options called 'preferRelative' which tries to resolve these kind of requests in the current directory too.
+
+Import trace for requested module:
+./node_modules/follow-redirects/debug.js
+./node_modules/follow-redirects/index.js
+./node_modules/axios/lib/adapters/http.js
+./node_modules/axios/lib/adapters/adapters.js
+./node_modules/axios/lib/axios.js
+./node_modules/axios/index.js
+./app/dashboard/page.tsx
+- [36mwait[39m compiling...
+- [33mwarn[39m ./node_modules/follow-redirects/debug.js
+Module not found: Can't resolve 'debug' in '/Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/follow-redirects'
+Did you mean './debug'?
+Requests that should resolve in the current directory need to start with './'.
+Requests that start with a name are treated as module requests and resolve within module directories (node_modules, /Users/simaant/Projects/health-insights-ai-app/frontend).
+If changing the source code is not an option there is also a resolve options called 'preferRelative' which tries to resolve these kind of requests in the current directory too.
+
+Import trace for requested module:
+./node_modules/follow-redirects/debug.js
+./node_modules/follow-redirects/index.js
+./node_modules/axios/lib/adapters/http.js
+./node_modules/axios/lib/adapters/adapters.js
+./node_modules/axios/lib/axios.js
+./node_modules/axios/index.js
+./app/dashboard/page.tsx
+- [36mwait[39m compiling...
+- [33mwarn[39m ./node_modules/follow-redirects/debug.js
+Module not found: Can't resolve 'debug' in '/Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/follow-redirects'
+Did you mean './debug'?
+Requests that should resolve in the current directory need to start with './'.
+Requests that start with a name are treated as module requests and resolve within module directories (node_modules, /Users/simaant/Projects/health-insights-ai-app/frontend).
+If changing the source code is not an option there is also a resolve options called 'preferRelative' which tries to resolve these kind of requests in the current directory too.
+
+Import trace for requested module:
+./node_modules/follow-redirects/debug.js
+./node_modules/follow-redirects/index.js
+./node_modules/axios/lib/adapters/http.js
+./node_modules/axios/lib/adapters/adapters.js
+./node_modules/axios/lib/axios.js
+./node_modules/axios/index.js
+./app/dashboard/page.tsx
+- [33mwarn[39m ./node_modules/follow-redirects/debug.js
+Module not found: Can't resolve 'debug' in '/Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/follow-redirects'
+Did you mean './debug'?
+Requests that should resolve in the current directory need to start with './'.
+Requests that start with a name are treated as module requests and resolve within module directories (node_modules, /Users/simaant/Projects/health-insights-ai-app/frontend).
+If changing the source code is not an option there is also a resolve options called 'preferRelative' which tries to resolve these kind of requests in the current directory too.
+
+Import trace for requested module:
+./node_modules/follow-redirects/debug.js
+./node_modules/follow-redirects/index.js
+./node_modules/axios/lib/adapters/http.js
+./node_modules/axios/lib/adapters/adapters.js
+./node_modules/axios/lib/axios.js
+./node_modules/axios/index.js
+./app/dashboard/page.tsx
+- [36mwait[39m compiling /page (client and server)...
+- [33mwarn[39m ./node_modules/follow-redirects/debug.js
+Module not found: Can't resolve 'debug' in '/Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/follow-redirects'
+Did you mean './debug'?
+Requests that should resolve in the current directory need to start with './'.
+Requests that start with a name are treated as module requests and resolve within module directories (node_modules, /Users/simaant/Projects/health-insights-ai-app/frontend).
+If changing the source code is not an option there is also a resolve options called 'preferRelative' which tries to resolve these kind of requests in the current directory too.
+
+Import trace for requested module:
+./node_modules/follow-redirects/debug.js
+./node_modules/follow-redirects/index.js
+./node_modules/axios/lib/adapters/http.js
+./node_modules/axios/lib/adapters/adapters.js
+./node_modules/axios/lib/axios.js
+./node_modules/axios/index.js
+./app/dashboard/page.tsx
+Error: Cannot find module '/Users/simaant/Projects/health-insights-ai-app/frontend/.next/server/pages/_document.js'
+Require stack:
+- /Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/next/dist/server/require.js
+- /Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/next/dist/server/next-server.js
+- /Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/next/dist/server/dev/next-dev-server.js
+- /Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/next/dist/server/next.js
+- /Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/next/dist/server/lib/render-server.js
+- /Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/next/dist/compiled/jest-worker/processChild.js
+[90m    at Function.<anonymous> (node:internal/modules/cjs/loader:1365:15)[39m
+    at [90m/Users/simaant/Projects/health-insights-ai-app/frontend/[39mnode_modules/[4mnext[24m/dist/server/require-hook.js:113:36
+[90m    at defaultResolveImpl (node:internal/modules/cjs/loader:1021:19)[39m
+[90m    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1026:22)[39m
+[90m    at Function._load (node:internal/modules/cjs/loader:1175:37)[39m
+[90m    at TracingChannel.traceSync (node:diagnostics_channel:322:14)[39m
+[90m    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)[39m
+[90m    at Module.require (node:internal/modules/cjs/loader:1445:12)[39m
+[90m    at require (node:internal/modules/helpers:135:16)[39m
+    at requirePage [90m(/Users/simaant/Projects/health-insights-ai-app/frontend/[39mnode_modules/[4mnext[24m/dist/server/require.js:112:75[90m)[39m
+    at [90m/Users/simaant/Projects/health-insights-ai-app/frontend/[39mnode_modules/[4mnext[24m/dist/server/load-components.js:76:65
+[90m    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)[39m
+    at async Promise.all (index 0)
+    at async loadComponentsImpl [90m(/Users/simaant/Projects/health-insights-ai-app/frontend/[39mnode_modules/[4mnext[24m/dist/server/load-components.js:75:33[90m)[39m
+    at async DevServer.findPageComponentsImpl [90m(/Users/simaant/Projects/health-insights-ai-app/frontend/[39mnode_modules/[4mnext[24m/dist/server/next-server.js:772:36[90m)[39m {
+  code: [32m'MODULE_NOT_FOUND'[39m,
+  requireStack: [
+    [32m'/Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/next/dist/server/require.js'[39m,
+    [32m'/Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/next/dist/server/next-server.js'[39m,
+    [32m'/Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/next/dist/server/dev/next-dev-server.js'[39m,
+    [32m'/Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/next/dist/server/next.js'[39m,
+    [32m'/Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/next/dist/server/lib/render-server.js'[39m,
+    [32m'/Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/next/dist/compiled/jest-worker/processChild.js'[39m
+  ]
+}
+Error: Cannot find module '/Users/simaant/Projects/health-insights-ai-app/frontend/.next/server/pages/_document.js'
+Require stack:
+- /Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/next/dist/server/require.js
+- /Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/next/dist/server/next-server.js
+- /Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/next/dist/server/dev/next-dev-server.js
+- /Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/next/dist/server/next.js
+- /Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/next/dist/server/lib/render-server.js
+- /Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/next/dist/compiled/jest-worker/processChild.js
+[90m    at Function.<anonymous> (node:internal/modules/cjs/loader:1365:15)[39m
+    at [90m/Users/simaant/Projects/health-insights-ai-app/frontend/[39mnode_modules/[4mnext[24m/dist/server/require-hook.js:113:36
+[90m    at defaultResolveImpl (node:internal/modules/cjs/loader:1021:19)[39m
+[90m    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1026:22)[39m
+[90m    at Function._load (node:internal/modules/cjs/loader:1175:37)[39m
+[90m    at TracingChannel.traceSync (node:diagnostics_channel:322:14)[39m
+[90m    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)[39m
+[90m    at Module.require (node:internal/modules/cjs/loader:1445:12)[39m
+[90m    at require (node:internal/modules/helpers:135:16)[39m
+    at requirePage [90m(/Users/simaant/Projects/health-insights-ai-app/frontend/[39mnode_modules/[4mnext[24m/dist/server/require.js:112:75[90m)[39m
+    at [90m/Users/simaant/Projects/health-insights-ai-app/frontend/[39mnode_modules/[4mnext[24m/dist/server/load-components.js:76:65
+[90m    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)[39m
+    at async Promise.all (index 0)
+    at async loadComponentsImpl [90m(/Users/simaant/Projects/health-insights-ai-app/frontend/[39mnode_modules/[4mnext[24m/dist/server/load-components.js:75:33[90m)[39m
+    at async DevServer.findPageComponentsImpl [90m(/Users/simaant/Projects/health-insights-ai-app/frontend/[39mnode_modules/[4mnext[24m/dist/server/next-server.js:772:36[90m)[39m {
+  code: [32m'MODULE_NOT_FOUND'[39m,
+  requireStack: [
+    [32m'/Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/next/dist/server/require.js'[39m,
+    [32m'/Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/next/dist/server/next-server.js'[39m,
+    [32m'/Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/next/dist/server/dev/next-dev-server.js'[39m,
+    [32m'/Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/next/dist/server/next.js'[39m,
+    [32m'/Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/next/dist/server/lib/render-server.js'[39m,
+    [32m'/Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/next/dist/compiled/jest-worker/processChild.js'[39m
+  ]
+}
+Error: Cannot find module '/Users/simaant/Projects/health-insights-ai-app/frontend/.next/server/pages/_document.js'
+Require stack:
+- /Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/next/dist/server/require.js
+- /Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/next/dist/server/next-server.js
+- /Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/next/dist/server/dev/next-dev-server.js
+- /Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/next/dist/server/next.js
+- /Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/next/dist/server/lib/render-server.js
+- /Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/next/dist/compiled/jest-worker/processChild.js
+[90m    at Function.<anonymous> (node:internal/modules/cjs/loader:1365:15)[39m
+    at [90m/Users/simaant/Projects/health-insights-ai-app/frontend/[39mnode_modules/[4mnext[24m/dist/server/require-hook.js:113:36
+[90m    at defaultResolveImpl (node:internal/modules/cjs/loader:1021:19)[39m
+[90m    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1026:22)[39m
+[90m    at Function._load (node:internal/modules/cjs/loader:1175:37)[39m
+[90m    at TracingChannel.traceSync (node:diagnostics_channel:322:14)[39m
+[90m    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)[39m
+[90m    at Module.require (node:internal/modules/cjs/loader:1445:12)[39m
+[90m    at require (node:internal/modules/helpers:135:16)[39m
+    at requirePage [90m(/Users/simaant/Projects/health-insights-ai-app/frontend/[39mnode_modules/[4mnext[24m/dist/server/require.js:112:75[90m)[39m
+    at [90m/Users/simaant/Projects/health-insights-ai-app/frontend/[39mnode_modules/[4mnext[24m/dist/server/load-components.js:76:65
+[90m    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)[39m
+    at async Promise.all (index 0)
+    at async loadComponentsImpl [90m(/Users/simaant/Projects/health-insights-ai-app/frontend/[39mnode_modules/[4mnext[24m/dist/server/load-components.js:75:33[90m)[39m
+    at async DevServer.findPageComponentsImpl [90m(/Users/simaant/Projects/health-insights-ai-app/frontend/[39mnode_modules/[4mnext[24m/dist/server/next-server.js:772:36[90m)[39m {
+  code: [32m'MODULE_NOT_FOUND'[39m,
+  requireStack: [
+    [32m'/Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/next/dist/server/require.js'[39m,
+    [32m'/Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/next/dist/server/next-server.js'[39m,
+    [32m'/Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/next/dist/server/dev/next-dev-server.js'[39m,
+    [32m'/Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/next/dist/server/next.js'[39m,
+    [32m'/Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/next/dist/server/lib/render-server.js'[39m,
+    [32m'/Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/next/dist/compiled/jest-worker/processChild.js'[39m
+  ]
+}
+Error: Cannot find module '/Users/simaant/Projects/health-insights-ai-app/frontend/.next/server/pages/_document.js'
+Require stack:
+- /Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/next/dist/server/require.js
+- /Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/next/dist/server/next-server.js
+- /Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/next/dist/server/dev/next-dev-server.js
+- /Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/next/dist/server/next.js
+- /Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/next/dist/server/lib/render-server.js
+- /Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/next/dist/compiled/jest-worker/processChild.js
+[90m    at Function.<anonymous> (node:internal/modules/cjs/loader:1365:15)[39m
+    at [90m/Users/simaant/Projects/health-insights-ai-app/frontend/[39mnode_modules/[4mnext[24m/dist/server/require-hook.js:113:36
+[90m    at defaultResolveImpl (node:internal/modules/cjs/loader:1021:19)[39m
+[90m    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1026:22)[39m
+[90m    at Function._load (node:internal/modules/cjs/loader:1175:37)[39m
+[90m    at TracingChannel.traceSync (node:diagnostics_channel:322:14)[39m
+[90m    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)[39m
+[90m    at Module.require (node:internal/modules/cjs/loader:1445:12)[39m
+[90m    at require (node:internal/modules/helpers:135:16)[39m
+    at requirePage [90m(/Users/simaant/Projects/health-insights-ai-app/frontend/[39mnode_modules/[4mnext[24m/dist/server/require.js:112:75[90m)[39m
+    at [90m/Users/simaant/Projects/health-insights-ai-app/frontend/[39mnode_modules/[4mnext[24m/dist/server/load-components.js:76:65
+[90m    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)[39m
+    at async Promise.all (index 0)
+    at async loadComponentsImpl [90m(/Users/simaant/Projects/health-insights-ai-app/frontend/[39mnode_modules/[4mnext[24m/dist/server/load-components.js:75:33[90m)[39m
+    at async DevServer.findPageComponentsImpl [90m(/Users/simaant/Projects/health-insights-ai-app/frontend/[39mnode_modules/[4mnext[24m/dist/server/next-server.js:772:36[90m)[39m {
+  code: [32m'MODULE_NOT_FOUND'[39m,
+  requireStack: [
+    [32m'/Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/next/dist/server/require.js'[39m,
+    [32m'/Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/next/dist/server/next-server.js'[39m,
+    [32m'/Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/next/dist/server/dev/next-dev-server.js'[39m,
+    [32m'/Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/next/dist/server/next.js'[39m,
+    [32m'/Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/next/dist/server/lib/render-server.js'[39m,
+    [32m'/Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/next/dist/compiled/jest-worker/processChild.js'[39m
+  ]
+}
+Error: Cannot find module '/Users/simaant/Projects/health-insights-ai-app/frontend/.next/server/pages/_document.js'
+Require stack:
+- /Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/next/dist/server/require.js
+- /Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/next/dist/server/next-server.js
+- /Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/next/dist/server/dev/next-dev-server.js
+- /Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/next/dist/server/next.js
+- /Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/next/dist/server/lib/render-server.js
+- /Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/next/dist/compiled/jest-worker/processChild.js
+[90m    at Function.<anonymous> (node:internal/modules/cjs/loader:1365:15)[39m
+    at [90m/Users/simaant/Projects/health-insights-ai-app/frontend/[39mnode_modules/[4mnext[24m/dist/server/require-hook.js:113:36
+[90m    at defaultResolveImpl (node:internal/modules/cjs/loader:1021:19)[39m
+[90m    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1026:22)[39m
+[90m    at Function._load (node:internal/modules/cjs/loader:1175:37)[39m
+[90m    at TracingChannel.traceSync (node:diagnostics_channel:322:14)[39m
+[90m    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)[39m
+[90m    at Module.require (node:internal/modules/cjs/loader:1445:12)[39m
+[90m    at require (node:internal/modules/helpers:135:16)[39m
+    at requirePage [90m(/Users/simaant/Projects/health-insights-ai-app/frontend/[39mnode_modules/[4mnext[24m/dist/server/require.js:112:75[90m)[39m
+    at [90m/Users/simaant/Projects/health-insights-ai-app/frontend/[39mnode_modules/[4mnext[24m/dist/server/load-components.js:76:65
+[90m    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)[39m
+    at async Promise.all (index 0)
+    at async loadComponentsImpl [90m(/Users/simaant/Projects/health-insights-ai-app/frontend/[39mnode_modules/[4mnext[24m/dist/server/load-components.js:75:33[90m)[39m
+    at async DevServer.findPageComponentsImpl [90m(/Users/simaant/Projects/health-insights-ai-app/frontend/[39mnode_modules/[4mnext[24m/dist/server/next-server.js:772:36[90m)[39m {
+  code: [32m'MODULE_NOT_FOUND'[39m,
+  requireStack: [
+    [32m'/Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/next/dist/server/require.js'[39m,
+    [32m'/Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/next/dist/server/next-server.js'[39m,
+    [32m'/Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/next/dist/server/dev/next-dev-server.js'[39m,
+    [32m'/Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/next/dist/server/next.js'[39m,
+    [32m'/Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/next/dist/server/lib/render-server.js'[39m,
+    [32m'/Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/next/dist/compiled/jest-worker/processChild.js'[39m
+  ]
+}
+- [36minfo[39m Loaded env from /Users/simaant/Projects/health-insights-ai-app/frontend/.env.local
+- [36mwait[39m compiling...
+- [33mwarn[39m ./node_modules/follow-redirects/debug.js
+Module not found: Can't resolve 'debug' in '/Users/simaant/Projects/health-insights-ai-app/frontend/node_modules/follow-redirects'
+Did you mean './debug'?
+Requests that should resolve in the current directory need to start with './'.
+Requests that start with a name are treated as module requests and resolve within module directories (node_modules, /Users/simaant/Projects/health-insights-ai-app/frontend).
+If changing the source code is not an option there is also a resolve options called 'preferRelative' which tries to resolve these kind of requests in the current directory too.
+
+Import trace for requested module:
+./node_modules/follow-redirects/debug.js
+./node_modules/follow-redirects/index.js
+./node_modules/axios/lib/adapters/http.js
+./node_modules/axios/lib/adapters/adapters.js
+./node_modules/axios/lib/axios.js
+./node_modules/axios/index.js
+./app/dashboard/page.tsx
+[?25h

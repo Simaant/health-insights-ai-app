@@ -1,0 +1,201 @@
+INFO:     Will watch for changes in these directories: ['/Users/simaant/Projects/health-insights-ai-app/backend']
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [41217] using StatReload
+INFO:     Started server process [41278]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:55823 - "POST /reports/debug-text HTTP/1.1" 404 Not Found
+WARNING:  StatReload detected changes in 'routes/report.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [41278]
+INFO:     Started server process [41671]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:55859 - "POST /reports/debug-text HTTP/1.1" 200 OK
+WARNING:  StatReload detected changes in 'routes/report.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [41671]
+INFO:     Started server process [41921]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:55909 - "POST /reports/debug-text HTTP/1.1" 200 OK
+(trapped) error reading bcrypt version
+Traceback (most recent call last):
+  File "/Users/simaant/Projects/health-insights-ai-app/venv/lib/python3.11/site-packages/passlib/handlers/bcrypt.py", line 620, in _load_backend_mixin
+    version = _bcrypt.__about__.__version__
+              ^^^^^^^^^^^^^^^^^
+AttributeError: module 'bcrypt' has no attribute '__about__'
+INFO:     127.0.0.1:55978 - "POST /auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55978 - "OPTIONS /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55978 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55978 - "OPTIONS /wearable/data/summary HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55984 - "OPTIONS /chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55978 - "GET /wearable/data/summary HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55978 - "OPTIONS /reports/reports HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55984 - "GET /chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55984 - "OPTIONS /chat/sessions/cc6b5728-359e-4c4a-b02b-1e9ede6b925c/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55978 - "GET /reports/reports HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55984 - "GET /chat/sessions/cc6b5728-359e-4c4a-b02b-1e9ede6b925c/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55984 - "OPTIONS /chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55984 - "POST /chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55984 - "OPTIONS /chat/sessions/08d2ab5d-23aa-4d2b-8c49-a4410ec45dec/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55984 - "GET /chat/sessions/08d2ab5d-23aa-4d2b-8c49-a4410ec45dec/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55995 - "OPTIONS /reports/upload HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55995 - "POST /reports/upload HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56035 - "GET /chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56035 - "GET /chat/sessions/cc6b5728-359e-4c4a-b02b-1e9ede6b925c/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56041 - "OPTIONS /chat/sessions/cc6b5728-359e-4c4a-b02b-1e9ede6b925c/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56041 - "POST /chat/sessions/cc6b5728-359e-4c4a-b02b-1e9ede6b925c/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56288 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56288 - "GET /auth/me HTTP/1.1" 200 OK
+WARNING:  StatReload detected changes in 'routes/report.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [41921]
+INFO:     Started server process [42476]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'routes/report.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [42476]
+INFO:     Started server process [42488]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'routes/report.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [42488]
+INFO:     Started server process [42511]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'routes/report.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [42511]
+INFO:     Started server process [42515]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'routes/report.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [42515]
+INFO:     Started server process [42523]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'routes/report.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [42523]
+INFO:     Started server process [42531]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'routes/report.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [42531]
+INFO:     Started server process [42536]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'routes/report.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [42536]
+INFO:     Started server process [43277]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:56399 - "OPTIONS /reports/debug-text HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56399 - "POST /reports/debug-text HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56399 - "OPTIONS /reports/upload HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56399 - "POST /reports/upload HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:56412 - "POST /reports/debug-text HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56412 - "POST /reports/upload HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:56422 - "OPTIONS /chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56422 - "GET /chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56422 - "OPTIONS /chat/sessions/cc6b5728-359e-4c4a-b02b-1e9ede6b925c/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56422 - "GET /chat/sessions/cc6b5728-359e-4c4a-b02b-1e9ede6b925c/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56429 - "POST /reports/debug-text HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56429 - "POST /reports/upload HTTP/1.1" 400 Bad Request
+WARNING:  StatReload detected changes in 'routes/report.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [43277]
+INFO:     Started server process [43406]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'routes/report.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [43406]
+INFO:     Started server process [43415]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'routes/report.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [43415]
+INFO:     Started server process [43420]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:56476 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56486 - "POST /reports/debug-text HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56493 - "POST /reports/upload HTTP/1.1" 401 Unauthorized
+WARNING:  StatReload detected changes in 'routes/report.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [43420]
+INFO:     Started server process [44103]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:56510 - "POST /reports/debug-text HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56510 - "POST /reports/upload HTTP/1.1" 400 Bad Request
+(trapped) error reading bcrypt version
+Traceback (most recent call last):
+  File "/Users/simaant/Projects/health-insights-ai-app/venv/lib/python3.11/site-packages/passlib/handlers/bcrypt.py", line 620, in _load_backend_mixin
+    version = _bcrypt.__about__.__version__
+              ^^^^^^^^^^^^^^^^^
+AttributeError: module 'bcrypt' has no attribute '__about__'
+INFO:     127.0.0.1:56569 - "POST /auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56569 - "OPTIONS /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56569 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56569 - "OPTIONS /wearable/data/summary HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56583 - "OPTIONS /chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56569 - "GET /wearable/data/summary HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56583 - "GET /chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56583 - "OPTIONS /reports/reports HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56569 - "OPTIONS /chat/sessions/cc6b5728-359e-4c4a-b02b-1e9ede6b925c/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56583 - "GET /reports/reports HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56569 - "GET /chat/sessions/cc6b5728-359e-4c4a-b02b-1e9ede6b925c/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56591 - "OPTIONS /reports/debug-text HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56591 - "POST /reports/debug-text HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56591 - "OPTIONS /reports/upload HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56591 - "POST /reports/upload HTTP/1.1" 400 Bad Request
+WARNING:  StatReload detected changes in 'models/__init__.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [44103]
+INFO:     Started server process [44248]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [44248]
+INFO:     Stopping reloader process [41217]

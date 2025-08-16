@@ -1,0 +1,7 @@
+Patient Name: Sarah Lee
+Date: 2025-08-08
+
+Glucose fasting level: 95 mg/dL
+HDL Cholesterol: 45 mg/dL
+Random words here that should be ignored
+Triglycerides: 175 mg/dL

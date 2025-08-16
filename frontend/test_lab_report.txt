@@ -1,0 +1,5 @@
+Blood Test Results:
+LDL: 120 mg/dL
+HDL: 45 mg/dL
+Glucose: 95 mg/dL
+Triglycerides: 180 mg/dL
