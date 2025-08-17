@@ -28,6 +28,20 @@ router = APIRouter()
 # Initialize the health marker detector
 marker_detector = HealthMarkerDetector()
 
+def _format_normal_range(normal_range: dict) -> str:
+    """Format normal range for display."""
+    min_val = normal_range.get('min')
+    max_val = normal_range.get('max')
+    
+    if min_val is not None and max_val is not None:
+        return f"{min_val}-{max_val}"
+    elif min_val is not None:
+        return f">{min_val}"
+    elif max_val is not None:
+        return f"<{max_val}"
+    else:
+        return "N/A"
+
 # Ensure upload directory exists
 UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -159,7 +173,7 @@ async def debug_text(
                     "value": m.value,
                     "unit": m.unit,
                     "status": m.status,
-                    "normalRange": f"{m.normal_range.get('min', '')}-{m.normal_range.get('max', '')}",
+                    "normalRange": _format_normal_range(m.normal_range),
                     "recommendation": m.recommendation
                 } for m in detected_markers
             ]
