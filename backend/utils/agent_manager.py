@@ -77,8 +77,26 @@ def _is_followup_question(prompt: str, chat_history: Optional[List[Dict[str, str
 
 def _is_specific_marker_question(prompt: str, markers: List[Dict[str, Any]]) -> bool:
     """Check if user is asking about a specific marker."""
-    marker_names = [m.get("name", "").lower() for m in markers]
-    return any(name in prompt for name in marker_names)
+    prompt_lower = prompt.lower()
+    
+    # Check for marker names in the prompt
+    for marker in markers:
+        marker_name = marker.get("name", "").lower()
+        if marker_name in prompt_lower:
+            return True
+        
+        # Check aliases and variations
+        if "hba1c" in prompt_lower or "a1c" in prompt_lower or "glycated" in prompt_lower:
+            if marker.get("name") == "Hemoglobin A1C":
+                return True
+        if "ferritin" in prompt_lower:
+            if marker.get("name") == "FERRITIN":
+                return True
+        if "glucose" in prompt_lower or "blood sugar" in prompt_lower:
+            if marker.get("name") == "Glucose":
+                return True
+    
+    return False
 
 def _is_treatment_question(prompt: str) -> bool:
     """Check if user is asking about treatment options."""
@@ -175,11 +193,25 @@ def _handle_specific_marker_question(markers: List[Dict[str, Any]], user_prompt:
     """Handle questions about specific markers."""
     prompt_lower = user_prompt.lower()
     
+    # Check for specific markers mentioned in the prompt
     for marker in markers:
         marker_name = marker.get("name", "").lower()
+        
+        # Direct name match
         if marker_name in prompt_lower:
             return _get_marker_specific_response(marker, user_prompt)
+        
+        # Check aliases and variations
+        if ("hba1c" in prompt_lower or "a1c" in prompt_lower or "glycated" in prompt_lower) and marker.get("name") == "Hemoglobin A1C":
+            return _get_marker_specific_response(marker, user_prompt)
+        if "ferritin" in prompt_lower and marker.get("name") == "FERRITIN":
+            return _get_marker_specific_response(marker, user_prompt)
+        if ("glucose" in prompt_lower or "blood sugar" in prompt_lower) and marker.get("name") == "Glucose":
+            return _get_marker_specific_response(marker, user_prompt)
+        if "cholesterol" in prompt_lower and marker.get("name") in ["Total Cholesterol", "LDL", "HDL"]:
+            return _get_marker_specific_response(marker, user_prompt)
     
+    # If no specific marker found, provide comprehensive response
     return _generate_comprehensive_marker_response(markers, user_prompt)
 
 def _handle_treatment_question(markers: List[Dict[str, Any]], user_prompt: str) -> str:
@@ -520,16 +552,37 @@ def _get_marker_specific_response(marker: Dict[str, Any], user_prompt: str) -> s
     status = marker.get("status", "")
     recommendation = marker.get("recommendation", "")
     
-    if status == "normal":
-        return f"Your {name} level of {value} {unit} is within the normal range. Continue maintaining your healthy lifestyle!"
+    # Build comprehensive response
+    response_parts = []
     
-    # Be more concise for specific marker questions
-    response_parts = [f"**{name}:** {value} {unit} ({status})"]
+    # Header with marker info
+    response_parts.append(f"**{name} Analysis:**")
+    response_parts.append(f"• **Your Value:** {value} {unit}")
+    response_parts.append(f"• **Status:** {status.upper()}")
     
+    # Add explanation
+    explanation = _get_marker_explanation(marker)
+    response_parts.append(f"\n**What this means:** {explanation}")
+    
+    # Add severity assessment
+    severity = _get_marker_severity(marker)
+    response_parts.append(f"\n**Severity:** {severity}")
+    
+    # Add causes if abnormal
+    if status != "normal":
+        causes = _get_marker_causes(marker)
+        response_parts.append(f"\n**Possible causes:** {causes}")
+        
+        # Add treatment advice
+        treatment = _get_default_treatment_advice(name, status)
+        response_parts.append(f"\n**Treatment approach:** {treatment}")
+    
+    # Add recommendation if available
     if recommendation:
-        response_parts.append(f"\n{recommendation}")
+        response_parts.append(f"\n**Recommendations:** {recommendation}")
     
-    response_parts.append(f"\n**Next steps:** Discuss with your healthcare provider and follow their recommendations.")
+    # Add next steps
+    response_parts.append(f"\n**Next steps:** Discuss these results with your healthcare provider for personalized guidance.")
     
     return "\n".join(response_parts)
 

@@ -29,10 +29,14 @@ class HealthMarkerDetector:
                     r"hemoglobin a1c[:\s]*(\d+\.?\d*)\s*(%|percent)",
                     r"hba1c[:\s]*[-=]\s*(\d+\.?\d*)",
                     r"glycated haemoglobin[:\s]*[-=]\s*(\d+\.?\d*)",
-                    r"glycated hemoglobin[:\s]*[-=]\s*(\d+\.?\d*)"
+                    r"glycated hemoglobin[:\s]*[-=]\s*(\d+\.?\d*)",
+                    r"hba1c[:\s]*(\d+\.?\d*)",
+                    r"a1c[:\s]*(\d+\.?\d*)",
+                    r"glycated[:\s]*(\d+\.?\d*)",
+                    r"hemoglobin[:\s]*a1c[:\s]*(\d+\.?\d*)"
                 ],
                 "normal": {"min": 4.0, "max": 5.6, "unit": "%"},
-                "aliases": ["HbA1C", "A1C", "Glycated Haemoglobin", "Glycated Hemoglobin"]
+                "aliases": ["HbA1C", "A1C", "Glycated Haemoglobin", "Glycated Hemoglobin", "HBA1C", "hba1c", "a1c", "A1C"]
             },
             "Creatinine": {
                 "patterns": [r"creatinine[:\s]*(\d+\.?\d*)\s*(mg/dL|µmol/L)"],
@@ -201,14 +205,15 @@ class HealthMarkerDetector:
         }
 
     def detect_markers(self, text: str) -> List[HealthMarker]:
-        """Detect health markers in the given text."""
+        """Detect health markers in the given text with improved flexibility."""
         detected_markers = []
         text_lower = text.lower()
         
+        # First pass: Try exact pattern matching
         for marker_name, marker_info in self.marker_patterns.items():
-            marker_found = False  # Flag to avoid duplicates
+            marker_found = False
             for pattern in marker_info["patterns"]:
-                if marker_found:  # Skip if we already found this marker
+                if marker_found:
                     break
                     
                 matches = re.finditer(pattern, text_lower, re.IGNORECASE)
@@ -217,15 +222,10 @@ class HealthMarkerDetector:
                         value = float(match.group(1))
                         unit = match.group(2) if len(match.groups()) > 1 else marker_info["normal"]["unit"]
                         
-                        # Determine status based on normal range
                         status = self._determine_status(value, marker_info["normal"])
-                        
-                        # Get the original text snippet
                         start = max(0, match.start() - 50)
                         end = min(len(text), match.end() + 50)
                         raw_text = text[start:end].strip()
-                        
-                        # Get recommendation for this marker
                         recommendation = self._get_marker_recommendation(marker_name, status)
                         
                         marker = HealthMarker(
@@ -238,10 +238,91 @@ class HealthMarkerDetector:
                             recommendation=recommendation
                         )
                         detected_markers.append(marker)
-                        marker_found = True  # Mark as found to avoid duplicates
-                        break  # Only take the first match for each pattern
+                        marker_found = True
+                        break
                     except (ValueError, IndexError):
                         continue
+        
+        # Second pass: Try flexible matching for common variations
+        if not detected_markers:
+            detected_markers = self._flexible_detect_markers(text)
+        
+        return detected_markers
+
+    def _flexible_detect_markers(self, text: str) -> List[HealthMarker]:
+        """Flexible detection for common variations and misspellings."""
+        detected_markers = []
+        text_lower = text.lower()
+        
+        # Common variations and their mappings
+        variations = {
+            "hba1c": "Hemoglobin A1C",
+            "a1c": "Hemoglobin A1C", 
+            "glycated": "Hemoglobin A1C",
+            "ferritin": "FERRITIN",
+            "glucose": "Glucose",
+            "blood sugar": "Glucose",
+            "cholesterol": "Total Cholesterol",
+            "ldl": "LDL",
+            "hdl": "HDL",
+            "triglycerides": "Triglycerides",
+            "creatinine": "Creatinine",
+            "bun": "BUN",
+            "hemoglobin": "Hemoglobin",
+            "hematocrit": "Hematocrit",
+            "wbc": "White Blood Cells",
+            "platelets": "Platelets",
+            "tsh": "TSH",
+            "t4": "T4",
+            "t3": "T3",
+            "alt": "ALT",
+            "ast": "AST"
+        }
+        
+        # Look for number patterns near marker names
+        number_pattern = r'(\d+\.?\d*)'
+        
+        for variation, marker_name in variations.items():
+            if variation in text_lower and marker_name in self.marker_patterns:
+                # Find numbers near the marker name
+                marker_pos = text_lower.find(variation)
+                if marker_pos != -1:
+                    # Look for numbers in a 100-character window around the marker
+                    start = max(0, marker_pos - 50)
+                    end = min(len(text), marker_pos + 50)
+                    window = text_lower[start:end]
+                    
+                    # Find all numbers in the window
+                    numbers = re.findall(number_pattern, window)
+                    if numbers:
+                        try:
+                            # Try to find the most likely value (usually the first number)
+                            value = float(numbers[0])
+                            marker_info = self.marker_patterns[marker_name]
+                            
+                            # Determine status
+                            status = self._determine_status(value, marker_info["normal"])
+                            
+                            # Get raw text
+                            raw_start = max(0, marker_pos - 30)
+                            raw_end = min(len(text), marker_pos + 30)
+                            raw_text = text[raw_start:raw_end].strip()
+                            
+                            # Get recommendation
+                            recommendation = self._get_marker_recommendation(marker_name, status)
+                            
+                            marker = HealthMarker(
+                                name=marker_name,
+                                value=value,
+                                unit=marker_info["normal"]["unit"],
+                                normal_range=marker_info["normal"],
+                                status=status,
+                                raw_text=raw_text,
+                                recommendation=recommendation
+                            )
+                            detected_markers.append(marker)
+                        except (ValueError, IndexError):
+                            continue
         
         return detected_markers
 
