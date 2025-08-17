@@ -9,13 +9,9 @@ import pdfplumber
 # Images
 from PIL import Image
 
-# Try to import pytesseract, but provide fallback if not available
-try:
-    import pytesseract
-    TESSERACT_AVAILABLE = True
-except ImportError:
-    TESSERACT_AVAILABLE = False
-    print("Warning: pytesseract not available. OCR functionality will be limited.")
+# OCR is not available in Railway environment for now
+TESSERACT_AVAILABLE = False
+print("Warning: OCR not available in Railway environment. Please upload PDFs or text files.")
 
 SUPPORTED_IMAGE_TYPES = {"image/png", "image/jpeg", "image/jpg"}
 SUPPORTED_PDF_TYPES = {"application/pdf"}
@@ -45,7 +41,7 @@ def extract_text_from_image_bytes(file_bytes: bytes) -> str:
     Extract text from an image given as bytes using PIL + Tesseract.
     """
     if not TESSERACT_AVAILABLE:
-        return "OCR not available in this environment. Please upload text files or PDFs instead."
+        return "OCR is not available in the current deployment environment. Please upload PDF files or use the manual entry feature instead. For image processing, we recommend converting images to PDF format first."
     
     try:
         image = Image.open(BytesIO(file_bytes))
