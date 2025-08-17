@@ -150,16 +150,17 @@ async def debug_text(
         detected_markers = marker_detector.detect_markers(text_content)
         
         return {
-            "extracted_text": text_content,
-            "text_length": len(text_content),
-            "detected_markers": len(detected_markers),
+            "extractedText": text_content,
+            "textLength": len(text_content),
+            "markersFound": len(detected_markers),
             "markers": [
                 {
                     "name": m.name,
                     "value": m.value,
                     "unit": m.unit,
                     "status": m.status,
-                    "raw_text": m.raw_text
+                    "normalRange": f"{m.normal_range.get('min', '')}-{m.normal_range.get('max', '')}",
+                    "recommendation": m.recommendation
                 } for m in detected_markers
             ]
         }
