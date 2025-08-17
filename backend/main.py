@@ -1,9 +1,5 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routes.report import router as report_router
-from routes.auth import router as auth_router
-from routes.chat import router as chat_router
-from routes.wearable import router as wearable_router
 from database import engine, Base
 import os
 
@@ -33,11 +29,34 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include routers
-app.include_router(auth_router, prefix="/auth", tags=["Authentication"])
-app.include_router(report_router, prefix="/reports", tags=["Reports"])
-app.include_router(chat_router, prefix="/chat", tags=["Chat"])
-app.include_router(wearable_router, prefix="/wearable", tags=["Wearable Data"])
+# Include routers with error handling
+try:
+    from routes.auth import router as auth_router
+    app.include_router(auth_router, prefix="/auth", tags=["Authentication"])
+    print("✅ Auth router loaded successfully")
+except Exception as e:
+    print(f"❌ Error loading auth router: {e}")
+
+try:
+    from routes.report import router as report_router
+    app.include_router(report_router, prefix="/reports", tags=["Reports"])
+    print("✅ Report router loaded successfully")
+except Exception as e:
+    print(f"❌ Error loading report router: {e}")
+
+try:
+    from routes.chat import router as chat_router
+    app.include_router(chat_router, prefix="/chat", tags=["Chat"])
+    print("✅ Chat router loaded successfully")
+except Exception as e:
+    print(f"❌ Error loading chat router: {e}")
+
+try:
+    from routes.wearable import router as wearable_router
+    app.include_router(wearable_router, prefix="/wearable", tags=["Wearable Data"])
+    print("✅ Wearable router loaded successfully")
+except Exception as e:
+    print(f"❌ Error loading wearable router: {e}")
 
 @app.get("/")
 async def root():
@@ -46,3 +65,16 @@ async def root():
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
+
+@app.get("/debug/routes")
+async def debug_routes():
+    """Debug endpoint to see all registered routes"""
+    routes = []
+    for route in app.routes:
+        if hasattr(route, 'path'):
+            routes.append({
+                "path": route.path,
+                "methods": list(route.methods) if hasattr(route, 'methods') else [],
+                "name": route.name if hasattr(route, 'name') else "Unknown"
+            })
+    return {"routes": routes}
