@@ -23,7 +23,7 @@ export default function FileUpload({ onUploadComplete }: FileUploadProps) {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000'}/report/upload`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000'}/reports/upload`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
