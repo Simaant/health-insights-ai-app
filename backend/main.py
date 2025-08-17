@@ -5,6 +5,7 @@ from routes.auth import router as auth_router
 from routes.chat import router as chat_router
 from routes.wearable import router as wearable_router
 from database import engine, Base
+import os
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -15,12 +16,20 @@ app = FastAPI(
     version="1.0.0"
 )
 
+# Get allowed origins from environment or use defaults
+ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "https://health-insights-ai-app.vercel.app",
+    "https://health-insights-ai-ceb4ok6ak-simaants-projects.vercel.app",
+    "https://health-insights-ai-app.railway.app",
+]
+
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure this properly for production
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 
