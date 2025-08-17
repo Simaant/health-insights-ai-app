@@ -57,6 +57,10 @@ def main():
     host = "0.0.0.0"
     
     print(f"🌐 Starting server on {host}:{port}")
+    print("⏳ Waiting 2 seconds for app to fully initialize...")
+    
+    import time
+    time.sleep(2)
     
     uvicorn.run(
         "main:app",
