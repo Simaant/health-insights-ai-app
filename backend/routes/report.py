@@ -13,13 +13,20 @@ from utils.agent_manager import run_agent
 from utils.ocr import ocr_any
 from utils.constants import NO_MARKERS_FOUND_MSG, ALL_NORMAL_MSG
 from utils.health_marker_detector import HealthMarkerDetector
-from utils.advanced_ocr import AdvancedOCR
+# Try to import advanced OCR, but provide fallback if not available
+try:
+    from utils.advanced_ocr import AdvancedOCR
+    advanced_ocr = AdvancedOCR()
+    ADVANCED_OCR_AVAILABLE = True
+except Exception as e:
+    print(f"Warning: Advanced OCR not available: {e}")
+    advanced_ocr = None
+    ADVANCED_OCR_AVAILABLE = False
 
 router = APIRouter()
 
-# Initialize the health marker detector and advanced OCR
+# Initialize the health marker detector
 marker_detector = HealthMarkerDetector()
-advanced_ocr = AdvancedOCR()
 
 # Ensure upload directory exists
 UPLOAD_DIR = "uploads"
@@ -59,17 +66,18 @@ async def debug_ocr(
             image_content = await file.read()
             image = Image.open(io.BytesIO(image_content))
             
-            # Use advanced OCR for better text extraction
+            # Use OCR for text extraction
             try:
-                # Try advanced OCR first
-                text_content = advanced_ocr.extract_text_with_multiple_configs(image)
+                if ADVANCED_OCR_AVAILABLE and advanced_ocr:
+                    # Try advanced OCR first
+                    text_content = advanced_ocr.extract_text_with_multiple_configs(image)
+                    
+                    # If no text found, try region-based extraction
+                    if not text_content.strip():
+                        region_texts = advanced_ocr.extract_text_regions(image)
+                        text_content = ' '.join(region_texts)
                 
-                # If no text found, try region-based extraction
-                if not text_content.strip():
-                    region_texts = advanced_ocr.extract_text_regions(image)
-                    text_content = ' '.join(region_texts)
-                
-                # If still no text, fall back to basic OCR
+                # Fall back to basic OCR if advanced OCR not available or failed
                 if not text_content.strip():
                     import pytesseract
                     # Basic preprocessing
