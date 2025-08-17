@@ -66,6 +66,11 @@ async def root():
 async def health_check():
     return {"status": "healthy"}
 
+@app.get("/simple")
+async def simple_test():
+    """Simple test route to check if sub-paths work"""
+    return {"message": "Simple route working!"}
+
 @app.get("/debug/routes")
 async def debug_routes():
     """Debug endpoint to see all registered routes"""
