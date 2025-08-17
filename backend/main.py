@@ -6,6 +6,10 @@ import os
 # Create database tables
 Base.metadata.create_all(bind=engine)
 
+# Add startup delay for Railway
+import time
+time.sleep(3)
+
 app = FastAPI(
     title="Health Insights AI",
     description="AI-powered health insights from lab reports and wearable data",
