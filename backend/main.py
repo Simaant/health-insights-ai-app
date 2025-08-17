@@ -30,12 +30,17 @@ app.add_middleware(
 )
 
 # Include routers with error handling
+print("🔄 Loading routers...")
+
 try:
     from routes.auth import router as auth_router
     app.include_router(auth_router, prefix="/auth", tags=["Authentication"])
     print("✅ Auth router loaded successfully")
 except Exception as e:
     print(f"❌ Error loading auth router: {e}")
+    print(f"   Error type: {type(e).__name__}")
+    import traceback
+    traceback.print_exc()
 
 try:
     from routes.report import router as report_router
@@ -43,6 +48,9 @@ try:
     print("✅ Report router loaded successfully")
 except Exception as e:
     print(f"❌ Error loading report router: {e}")
+    print(f"   Error type: {type(e).__name__}")
+    import traceback
+    traceback.print_exc()
 
 try:
     from routes.chat import router as chat_router
@@ -50,6 +58,9 @@ try:
     print("✅ Chat router loaded successfully")
 except Exception as e:
     print(f"❌ Error loading chat router: {e}")
+    print(f"   Error type: {type(e).__name__}")
+    import traceback
+    traceback.print_exc()
 
 try:
     from routes.wearable import router as wearable_router
@@ -57,6 +68,11 @@ try:
     print("✅ Wearable router loaded successfully")
 except Exception as e:
     print(f"❌ Error loading wearable router: {e}")
+    print(f"   Error type: {type(e).__name__}")
+    import traceback
+    traceback.print_exc()
+
+print("🎉 All routers loaded!")
 
 @app.get("/")
 async def root():
