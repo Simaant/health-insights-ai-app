@@ -24,9 +24,15 @@ class HealthMarkerDetector:
                 "aliases": ["Blood Sugar", "Fasting Glucose"]
             },
             "Hemoglobin A1C": {
-                "patterns": [r"hba1c[:\s]*(\d+\.?\d*)\s*(%|percent)", r"hemoglobin a1c[:\s]*(\d+\.?\d*)\s*(%|percent)"],
+                "patterns": [
+                    r"hba1c[:\s]*(\d+\.?\d*)\s*(%|percent)", 
+                    r"hemoglobin a1c[:\s]*(\d+\.?\d*)\s*(%|percent)",
+                    r"hba1c[:\s]*[-=]\s*(\d+\.?\d*)",
+                    r"glycated haemoglobin[:\s]*[-=]\s*(\d+\.?\d*)",
+                    r"glycated hemoglobin[:\s]*[-=]\s*(\d+\.?\d*)"
+                ],
                 "normal": {"min": 4.0, "max": 5.6, "unit": "%"},
-                "aliases": ["HbA1C", "A1C"]
+                "aliases": ["HbA1C", "A1C", "Glycated Haemoglobin", "Glycated Hemoglobin"]
             },
             "Creatinine": {
                 "patterns": [r"creatinine[:\s]*(\d+\.?\d*)\s*(mg/dL|µmol/L)"],

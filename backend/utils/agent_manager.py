@@ -543,6 +543,8 @@ def _get_default_treatment_advice(marker_name: str, status: str) -> str:
         return "Increase physical activity and include healthy fats in your diet."
     elif marker_name == "Glucose" and status == "high":
         return "Monitor carbohydrate intake and increase physical activity."
+    elif marker_name in ["HEMOGLOBIN A1C", "HBA1C"] and status == "high":
+        return "High HbA1C indicates poor blood sugar control. Focus on diet, exercise, and medication compliance. Work closely with your healthcare team."
     else:
         return "Consult your healthcare provider for personalized treatment recommendations."
 
@@ -555,7 +557,9 @@ def _get_marker_explanation(marker: Dict[str, Any]) -> str:
         "LDL": "LDL (Low-Density Lipoprotein) is often called 'bad cholesterol' because it can build up in artery walls, increasing heart disease risk.",
         "HDL": "HDL (High-Density Lipoprotein) is 'good cholesterol' that helps remove LDL from arteries, protecting against heart disease.",
         "GLUCOSE": "Glucose is your body's main source of energy. High levels may indicate diabetes or prediabetes.",
-        "TSH": "TSH (Thyroid-Stimulating Hormone) controls thyroid function. High levels suggest hypothyroidism, low levels suggest hyperthyroidism."
+        "TSH": "TSH (Thyroid-Stimulating Hormone) controls thyroid function. High levels suggest hypothyroidism, low levels suggest hyperthyroidism.",
+        "HEMOGLOBIN A1C": "HbA1C (Hemoglobin A1C) measures your average blood sugar over the past 2-3 months. It's the gold standard for diabetes diagnosis and monitoring.",
+        "HBA1C": "HbA1C (Hemoglobin A1C) measures your average blood sugar over the past 2-3 months. It's the gold standard for diabetes diagnosis and monitoring."
     }
     
     return explanations.get(name, f"{name} is a health marker that your doctor uses to assess your overall health status.")
@@ -573,6 +577,8 @@ def _get_marker_causes(marker: Dict[str, Any]) -> str:
         return "Low HDL can be caused by: smoking, obesity, lack of exercise, poor diet, diabetes, or genetic factors."
     elif name == "Glucose" and status == "high":
         return "High glucose can be caused by: poor diet, lack of exercise, obesity, stress, certain medications, or underlying diabetes."
+    elif name in ["HEMOGLOBIN A1C", "HBA1C"] and status == "high":
+        return "High HbA1C can be caused by: poor diet (high in refined carbs/sugars), lack of exercise, obesity, stress, medication non-compliance, or uncontrolled diabetes."
     
     return f"Abnormal {name} levels can have various causes. Consult your healthcare provider for a thorough evaluation."
 
@@ -597,6 +603,13 @@ def _get_marker_severity(marker: Dict[str, Any]) -> str:
             return "High LDL requiring lifestyle changes and possibly medication."
         else:
             return "Moderately elevated cholesterol that can often be managed with lifestyle changes."
+    elif name in ["HEMOGLOBIN A1C", "HBA1C"] and status == "high":
+        if value >= 9.0:
+            return "Very high HbA1C indicating poor diabetes control. Requires immediate medical attention and medication adjustment."
+        elif value >= 7.0:
+            return "High HbA1C indicating suboptimal diabetes control. Requires lifestyle changes and possibly medication adjustment."
+        else:
+            return "Elevated HbA1C that can often be managed with lifestyle changes and close monitoring."
     
     return f"The severity of your {name} level should be evaluated by your healthcare provider in the context of your overall health."
 
