@@ -29,50 +29,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include routers with error handling
-print("🔄 Loading routers...")
+# Include routers
+from routes.auth import router as auth_router
+from routes.report import router as report_router
+from routes.chat import router as chat_router
+from routes.wearable import router as wearable_router
 
-try:
-    from routes.auth import router as auth_router
-    app.include_router(auth_router, prefix="/auth", tags=["Authentication"])
-    print("✅ Auth router loaded successfully")
-except Exception as e:
-    print(f"❌ Error loading auth router: {e}")
-    print(f"   Error type: {type(e).__name__}")
-    import traceback
-    traceback.print_exc()
-
-try:
-    from routes.report import router as report_router
-    app.include_router(report_router, prefix="/reports", tags=["Reports"])
-    print("✅ Report router loaded successfully")
-except Exception as e:
-    print(f"❌ Error loading report router: {e}")
-    print(f"   Error type: {type(e).__name__}")
-    import traceback
-    traceback.print_exc()
-
-try:
-    from routes.chat import router as chat_router
-    app.include_router(chat_router, prefix="/chat", tags=["Chat"])
-    print("✅ Chat router loaded successfully")
-except Exception as e:
-    print(f"❌ Error loading chat router: {e}")
-    print(f"   Error type: {type(e).__name__}")
-    import traceback
-    traceback.print_exc()
-
-try:
-    from routes.wearable import router as wearable_router
-    app.include_router(wearable_router, prefix="/wearable", tags=["Wearable Data"])
-    print("✅ Wearable router loaded successfully")
-except Exception as e:
-    print(f"❌ Error loading wearable router: {e}")
-    print(f"   Error type: {type(e).__name__}")
-    import traceback
-    traceback.print_exc()
-
-print("🎉 All routers loaded!")
+app.include_router(auth_router, prefix="/auth", tags=["Authentication"])
+app.include_router(report_router, prefix="/reports", tags=["Reports"])
+app.include_router(chat_router, prefix="/chat", tags=["Chat"])
+app.include_router(wearable_router, prefix="/wearable", tags=["Wearable Data"])
 
 @app.get("/")
 async def root():
