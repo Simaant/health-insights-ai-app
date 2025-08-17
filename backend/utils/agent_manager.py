@@ -248,12 +248,13 @@ def _handle_treatment_question(markers: List[Dict[str, Any]], user_prompt: str) 
                    "2. **Medication:** May be needed if lifestyle changes aren't sufficient\n"
                    "3. **Regular monitoring:** Follow your doctor's testing schedule")
     
-    return ("**Treatment approach:**\n"
-            "1. Address the most critical markers first\n"
-            "2. Implement lifestyle changes (diet, exercise)\n"
-            "3. Consider medications if needed\n"
-            "4. Regular monitoring and follow-up\n"
-            "**Always consult your healthcare provider for personalized treatment plans.**")
+    return ("## 🏥 Treatment Approach\n\n"
+            "**Step-by-Step Plan:**\n"
+            "1. **Prioritize Critical Markers:** Address the most concerning results first\n"
+            "2. **Lifestyle Modifications:** Implement diet and exercise changes\n"
+            "3. **Medical Intervention:** Consider medications if lifestyle changes aren't sufficient\n"
+            "4. **Regular Monitoring:** Schedule follow-up tests and appointments\n\n"
+            "**Important:** Always consult your healthcare provider for personalized treatment plans.")
 
 def _handle_food_question(markers: List[Dict[str, Any]], user_prompt: str) -> str:
     """Handle diet and nutrition questions."""
@@ -283,11 +284,19 @@ def _handle_food_question(markers: List[Dict[str, Any]], user_prompt: str) -> st
                    "• **Choose:** Lean proteins, whole grains, healthy fats (olive oil, nuts)")
     
     # Multiple markers - give focused advice
-    return ("**Dietary recommendations:**\n"
-            "• Focus on whole foods, lean proteins, and plenty of vegetables\n"
-            "• Reduce processed foods and added sugars\n"
-            "• Include healthy fats and fiber\n"
-            "• Consider consulting a registered dietitian for personalized advice")
+    return ("## 🍎 Dietary Recommendations\n\n"
+            "**General Guidelines:**\n"
+            "• **Whole Foods:** Focus on fresh fruits, vegetables, whole grains, and lean proteins\n"
+            "• **Reduce Processed Foods:** Limit packaged foods, added sugars, and refined carbohydrates\n"
+            "• **Healthy Fats:** Include nuts, seeds, olive oil, and fatty fish\n"
+            "• **Fiber:** Aim for 25-30 grams of fiber daily from fruits, vegetables, and whole grains\n\n"
+            "**Specific Recommendations:**\n"
+            "• **Proteins:** Lean meats, fish, eggs, legumes, and plant-based proteins\n"
+            "• **Vegetables:** Aim for 2-3 cups daily, including leafy greens\n"
+            "• **Fruits:** 1-2 servings daily, focusing on low-sugar options\n"
+            "• **Hydration:** Drink 8-10 glasses of water daily\n\n"
+            "**Next Steps:**\n"
+            "Consider consulting a registered dietitian for personalized meal planning and guidance.")
 
 def _handle_symptom_question(markers: List[Dict[str, Any]], user_prompt: str) -> str:
     """Handle symptom-related questions."""
@@ -554,7 +563,7 @@ def _assess_severity(markers: List[Dict[str, Any]], user_prompt: str) -> str:
     return "I'm not sure which marker you're asking about. Could you please specify which health marker you'd like me to assess?"
 
 def _get_marker_specific_response(marker: Dict[str, Any], user_prompt: str) -> str:
-    """Get a specific response for ANY marker - completely generalized."""
+    """Get a specific response for ANY marker - completely generalized with proper formatting."""
     name = marker.get("name", "")
     value = marker.get("value", "")
     unit = marker.get("unit", "")
@@ -562,12 +571,14 @@ def _get_marker_specific_response(marker: Dict[str, Any], user_prompt: str) -> s
     recommendation = marker.get("recommendation", "")
     normal_range = marker.get("normal_range", {})
     
-    # Build comprehensive response
+    # Build comprehensive response with proper formatting
     response_parts = []
     
     # Header with marker info
-    response_parts.append(f"**{name} Analysis:**")
-    response_parts.append(f"• **Your Value:** {value} {unit}")
+    response_parts.append(f"## 📊 {name} Analysis")
+    response_parts.append("")
+    response_parts.append("**Your Results:**")
+    response_parts.append(f"• **Value:** {value} {unit}")
     response_parts.append(f"• **Status:** {status.upper()}")
     
     # Add normal range if available
@@ -581,29 +592,42 @@ def _get_marker_specific_response(marker: Dict[str, Any], user_prompt: str) -> s
         elif max_val is not None:
             response_parts.append(f"• **Normal Range:** <{max_val} {unit}")
     
+    response_parts.append("")
+    
     # Add intelligent explanation
     explanation = _get_generalized_marker_explanation(marker)
-    response_parts.append(f"\n**What this means:** {explanation}")
+    response_parts.append("## 📋 What This Means")
+    response_parts.append(explanation)
+    response_parts.append("")
     
     # Add intelligent severity assessment
     severity = _get_generalized_severity(marker)
-    response_parts.append(f"\n**Severity:** {severity}")
+    response_parts.append("## ⚠️ Severity Assessment")
+    response_parts.append(severity)
+    response_parts.append("")
     
     # Add intelligent causes if abnormal
     if status != "normal":
         causes = _get_generalized_causes(marker)
-        response_parts.append(f"\n**Possible causes:** {causes}")
+        response_parts.append("## 🔍 Possible Causes")
+        response_parts.append(causes)
+        response_parts.append("")
         
         # Add intelligent treatment advice
         treatment = _get_generalized_treatment(marker)
-        response_parts.append(f"\n**Treatment approach:** {treatment}")
+        response_parts.append("## 💊 Treatment Approach")
+        response_parts.append(treatment)
+        response_parts.append("")
     
     # Add recommendation if available
     if recommendation:
-        response_parts.append(f"\n**Recommendations:** {recommendation}")
+        response_parts.append("## 💡 Recommendations")
+        response_parts.append(recommendation)
+        response_parts.append("")
     
     # Add next steps
-    response_parts.append(f"\n**Next steps:** Discuss these results with your healthcare provider for personalized guidance.")
+    response_parts.append("## 🎯 Next Steps")
+    response_parts.append("Discuss these results with your healthcare provider for personalized guidance.")
     
     return "\n".join(response_parts)
 
@@ -778,28 +802,49 @@ def _get_marker_severity(marker: Dict[str, Any]) -> str:
     return f"The severity of your {name} level should be evaluated by your healthcare provider in the context of your overall health."
 
 def _generate_comprehensive_marker_response(markers: List[Dict[str, Any]], user_prompt: str) -> str:
-    """Generate a comprehensive response about all markers."""
+    """Generate a comprehensive response about all markers with proper formatting."""
     abnormal_markers = [m for m in markers if m.get("status") != "normal"]
     normal_markers = [m for m in markers if m.get("status") == "normal"]
     
     if not abnormal_markers:
         return (
-            f"All {len(markers)} of your health markers are within normal ranges. "
-            "Continue maintaining your healthy lifestyle!"
+            f"## ✅ All Markers Normal\n\n"
+            f"Great news! All {len(markers)} of your health markers are within normal ranges.\n\n"
+            "**Keep up the good work:** Continue maintaining your healthy lifestyle!"
         )
     
-    # Be more concise for general questions
-    response_parts = [f"You have {len(abnormal_markers)} marker(s) outside normal range:"]
+    # Build response for abnormal markers
+    response_parts = []
+    response_parts.append(f"## 📊 Health Markers Summary")
+    response_parts.append(f"**Analysis of {len(markers)} Health Markers**")
+    response_parts.append("")
     
-    for marker in abnormal_markers:
-        name = marker.get("name", "")
-        value = marker.get("value", "")
-        unit = marker.get("unit", "")
-        status = marker.get("status", "")
-        
-        response_parts.append(f"• **{name}:** {value} {unit} ({status})")
+    if abnormal_markers:
+        response_parts.append(f"## ⚠️ Abnormal Markers ({len(abnormal_markers)})")
+        for marker in abnormal_markers:
+            name = marker.get("name", "")
+            value = marker.get("value", "")
+            unit = marker.get("unit", "")
+            status = marker.get("status", "")
+            response_parts.append(f"• **{name}:** {value} {unit} ({status.upper()})")
+        response_parts.append("")
     
-    response_parts.append("\n**Recommendation:** Discuss these results with your healthcare provider for personalized guidance.")
+    if normal_markers:
+        response_parts.append(f"## ✅ Normal Markers ({len(normal_markers)})")
+        for marker in normal_markers:
+            name = marker.get("name", "")
+            value = marker.get("value", "")
+            unit = marker.get("unit", "")
+            response_parts.append(f"• **{name}:** {value} {unit}")
+        response_parts.append("")
+    
+    response_parts.append("## 💡 Recommendations")
+    response_parts.append("• **Prioritize Abnormal Markers:** Focus on addressing the concerning results first")
+    response_parts.append("• **Lifestyle Changes:** Implement diet and exercise modifications")
+    response_parts.append("• **Medical Consultation:** Consider consulting your healthcare provider")
+    response_parts.append("• **Follow-up Testing:** Schedule repeat testing as recommended")
+    response_parts.append("")
+    response_parts.append("**Next Steps:** Discuss these results with your healthcare provider for personalized guidance.")
     
     return "\n".join(response_parts)
 
@@ -875,8 +920,16 @@ def _handle_general_health_questions(prompt: str, chat_history: Optional[List[Di
     
     # Upload/report specific questions
     if "upload" in prompt_lower or "report" in prompt_lower:
-        return ("Upload your lab reports using the 'Upload Reports' tab, or manually enter your health markers using the 'Manual Entry' tab. "
-                "Once you have data uploaded, I can provide personalized recommendations based on your results.")
+        return ("## 📋 How to Get Personalized Analysis\n\n"
+                "**To provide you with personalized recommendations, please:**\n\n"
+                "1. **Upload Reports:** Use the 'Upload Reports' tab to upload your lab results\n"
+                "2. **Manual Entry:** Use the 'Manual Entry' tab to input your health markers\n\n"
+                "**Once you have data uploaded, I can:**\n"
+                "• Analyze your specific results\n"
+                "• Provide personalized recommendations\n"
+                "• Answer questions about your health markers\n"
+                "• Suggest lifestyle modifications\n\n"
+                "**Ready to get started?** Upload your data and ask me anything about your health!")
     
     # Wearable device questions
     if "wearable" in prompt_lower or "device" in prompt_lower:
