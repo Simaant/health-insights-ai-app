@@ -250,34 +250,39 @@ class HealthMarkerDetector:
         return detected_markers
 
     def _flexible_detect_markers(self, text: str) -> List[HealthMarker]:
-        """Flexible detection for common variations and misspellings."""
+        """Dynamic detection for ANY health markers in ANY format."""
         detected_markers = []
         text_lower = text.lower()
         
-        # Common variations and their mappings
-        variations = {
-            "hba1c": "Hemoglobin A1C",
-            "a1c": "Hemoglobin A1C", 
-            "glycated": "Hemoglobin A1C",
-            "ferritin": "FERRITIN",
-            "glucose": "Glucose",
-            "blood sugar": "Glucose",
-            "cholesterol": "Total Cholesterol",
-            "ldl": "LDL",
-            "hdl": "HDL",
-            "triglycerides": "Triglycerides",
-            "creatinine": "Creatinine",
-            "bun": "BUN",
-            "hemoglobin": "Hemoglobin",
-            "hematocrit": "Hematocrit",
-            "wbc": "White Blood Cells",
-            "platelets": "Platelets",
-            "tsh": "TSH",
-            "t4": "T4",
-            "t3": "T3",
-            "alt": "ALT",
-            "ast": "AST"
-        }
+        # Dynamic pattern to find ANY marker name followed by a number
+        # This will catch patterns like: "marker: value", "marker = value", "marker value", etc.
+        dynamic_patterns = [
+            r'([a-zA-Z\s]+)[:\s=]+(\d+\.?\d*)\s*([a-zA-Z/%]+)?',  # "marker: value unit"
+            r'([a-zA-Z\s]+)\s+(\d+\.?\d*)\s*([a-zA-Z/%]+)?',      # "marker value unit"
+            r'([a-zA-Z\s]+)\s*=\s*(\d+\.?\d*)\s*([a-zA-Z/%]+)?',  # "marker = value unit"
+        ]
+        
+        for pattern in dynamic_patterns:
+            matches = re.finditer(pattern, text_lower, re.IGNORECASE)
+            for match in matches:
+                try:
+                    marker_name = match.group(1).strip()
+                    value = float(match.group(2))
+                    unit = match.group(3) if match.group(3) else self._guess_unit(marker_name)
+                    
+                    # Skip if it's not a health marker (too short, common words, etc.)
+                    if len(marker_name) < 3 or marker_name in ['normal', 'range', 'value', 'test', 'result']:
+                        continue
+                    
+                    # Create a dynamic marker
+                    marker = self._create_dynamic_marker(marker_name, value, unit, text)
+                    if marker:
+                        detected_markers.append(marker)
+                        
+                except (ValueError, IndexError):
+                    continue
+        
+        return detected_markers
         
         # Look for number patterns near marker names
         number_pattern = r'(\d+\.?\d*)'
@@ -325,6 +330,152 @@ class HealthMarkerDetector:
                             continue
         
         return detected_markers
+
+    def _guess_unit(self, marker_name: str) -> str:
+        """Intelligently guess the unit based on marker name."""
+        marker_lower = marker_name.lower()
+        
+        # Common unit patterns
+        if any(word in marker_lower for word in ['glucose', 'sugar', 'cholesterol', 'ldl', 'hdl', 'triglycerides']):
+            return 'mg/dL'
+        elif any(word in marker_lower for word in ['hba1c', 'a1c', 'glycated', 'hematocrit']):
+            return '%'
+        elif any(word in marker_lower for word in ['ferritin', 'troponin', 'bnp']):
+            return 'ng/mL'
+        elif any(word in marker_lower for word in ['creatinine', 'bun']):
+            return 'mg/dL'
+        elif any(word in marker_lower for word in ['hemoglobin', 'albumin']):
+            return 'g/dL'
+        elif any(word in marker_lower for word in ['wbc', 'platelets', 'rbc']):
+            return 'K/µL'
+        elif any(word in marker_lower for word in ['tsh', 't4', 't3']):
+            return 'µIU/mL'
+        elif any(word in marker_lower for word in ['alt', 'ast', 'alkaline']):
+            return 'U/L'
+        else:
+            return 'units'  # Generic fallback
+
+    def _create_dynamic_marker(self, marker_name: str, value: float, unit: str, original_text: str) -> Optional[HealthMarker]:
+        """Create a dynamic marker with intelligent normal range estimation."""
+        # Try to find normal range in the text
+        normal_range = self._extract_normal_range(marker_name, original_text)
+        
+        # If no normal range found, use intelligent defaults
+        if not normal_range:
+            normal_range = self._get_intelligent_normal_range(marker_name, value)
+        
+        # Determine status
+        status = self._determine_status(value, normal_range)
+        
+        # Get raw text context
+        marker_pos = original_text.lower().find(marker_name.lower())
+        if marker_pos != -1:
+            start = max(0, marker_pos - 30)
+            end = min(len(original_text), marker_pos + 50)
+            raw_text = original_text[start:end].strip()
+        else:
+            raw_text = f"{marker_name}: {value} {unit}"
+        
+        # Generate intelligent recommendation
+        recommendation = self._get_intelligent_recommendation(marker_name, value, status, normal_range)
+        
+        return HealthMarker(
+            name=marker_name.title(),  # Proper case
+            value=value,
+            unit=unit,
+            normal_range=normal_range,
+            status=status,
+            raw_text=raw_text,
+            recommendation=recommendation
+        )
+
+    def _extract_normal_range(self, marker_name: str, text: str) -> Optional[Dict[str, float]]:
+        """Extract normal range from text if available."""
+        text_lower = text.lower()
+        marker_lower = marker_name.lower()
+        
+        # Look for patterns like "normal range: 4-6", "reference: 70-100", etc.
+        range_patterns = [
+            r'normal\s+range[:\s]*(\d+\.?\d*)\s*[-–]\s*(\d+\.?\d*)',
+            r'reference[:\s]*(\d+\.?\d*)\s*[-–]\s*(\d+\.?\d*)',
+            r'range[:\s]*(\d+\.?\d*)\s*[-–]\s*(\d+\.?\d*)',
+            r'(\d+\.?\d*)\s*[-–]\s*(\d+\.?\d*)',  # Generic range pattern
+        ]
+        
+        for pattern in range_patterns:
+            matches = re.findall(pattern, text_lower)
+            if matches:
+                try:
+                    min_val, max_val = float(matches[0][0]), float(matches[0][1])
+                    return {"min": min_val, "max": max_val}
+                except (ValueError, IndexError):
+                    continue
+        
+        return None
+
+    def _get_intelligent_normal_range(self, marker_name: str, value: float) -> Dict[str, float]:
+        """Intelligently estimate normal range based on marker name and value."""
+        marker_lower = marker_name.lower()
+        
+        # Common normal ranges based on marker type
+        if any(word in marker_lower for word in ['glucose', 'sugar']):
+            return {"min": 70, "max": 100}
+        elif any(word in marker_lower for word in ['hba1c', 'a1c', 'glycated']):
+            return {"min": 4.0, "max": 5.6}
+        elif any(word in marker_lower for word in ['cholesterol', 'ldl']):
+            return {"max": 100}
+        elif any(word in marker_lower for word in ['hdl']):
+            return {"min": 40}
+        elif any(word in marker_lower for word in ['triglycerides']):
+            return {"max": 150}
+        elif any(word in marker_lower for word in ['ferritin']):
+            return {"min": 38, "max": 380}
+        elif any(word in marker_lower for word in ['creatinine']):
+            return {"min": 0.6, "max": 1.2}
+        elif any(word in marker_lower for word in ['hemoglobin']):
+            return {"min": 12, "max": 16}
+        elif any(word in marker_lower for word in ['hematocrit']):
+            return {"min": 36, "max": 46}
+        elif any(word in marker_lower for word in ['wbc']):
+            return {"min": 4.5, "max": 11.0}
+        elif any(word in marker_lower for word in ['platelets']):
+            return {"min": 150, "max": 450}
+        elif any(word in marker_lower for word in ['tsh']):
+            return {"min": 0.4, "max": 4.0}
+        else:
+            # For unknown markers, estimate based on value magnitude
+            if value < 1:
+                return {"min": 0, "max": 1}
+            elif value < 10:
+                return {"min": 0, "max": 10}
+            elif value < 100:
+                return {"min": 0, "max": 100}
+            else:
+                return {"min": 0, "max": value * 2}  # Conservative estimate
+
+    def _get_intelligent_recommendation(self, marker_name: str, value: float, status: str, normal_range: Dict[str, float]) -> str:
+        """Generate intelligent recommendations for ANY marker."""
+        if status == "normal":
+            return f"Your {marker_name} level is within normal range. Continue maintaining your healthy lifestyle."
+        
+        # Get the normal range for context
+        min_val = normal_range.get('min')
+        max_val = normal_range.get('max')
+        
+        if status == "high":
+            if max_val:
+                return f"Your {marker_name} level of {value} is above the normal range (max: {max_val}). Consider lifestyle changes and consult your healthcare provider for personalized guidance."
+            else:
+                return f"Your {marker_name} level of {value} appears elevated. Consult your healthcare provider for evaluation and personalized recommendations."
+        
+        elif status == "low":
+            if min_val:
+                return f"Your {marker_name} level of {value} is below the normal range (min: {min_val}). Consider dietary changes and consult your healthcare provider for evaluation."
+            else:
+                return f"Your {marker_name} level of {value} appears low. Consult your healthcare provider for evaluation and personalized recommendations."
+        
+        else:
+            return f"Your {marker_name} level of {value} may be outside normal ranges. Consult your healthcare provider for proper evaluation and guidance."
 
     def _determine_status(self, value: float, normal_range: Dict[str, float]) -> str:
         """Determine if a value is normal, low, high, or critical."""

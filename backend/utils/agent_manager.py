@@ -76,24 +76,21 @@ def _is_followup_question(prompt: str, chat_history: Optional[List[Dict[str, str
     return any(indicator in prompt for indicator in followup_indicators)
 
 def _is_specific_marker_question(prompt: str, markers: List[Dict[str, Any]]) -> bool:
-    """Check if user is asking about a specific marker."""
+    """Check if user is asking about a specific marker - generalized for ANY marker."""
     prompt_lower = prompt.lower()
     
-    # Check for marker names in the prompt
+    # Check for ANY marker name mentioned in the prompt
     for marker in markers:
         marker_name = marker.get("name", "").lower()
+        
+        # Direct name match
         if marker_name in prompt_lower:
             return True
         
-        # Check aliases and variations
-        if "hba1c" in prompt_lower or "a1c" in prompt_lower or "glycated" in prompt_lower:
-            if marker.get("name") == "Hemoglobin A1C":
-                return True
-        if "ferritin" in prompt_lower:
-            if marker.get("name") == "FERRITIN":
-                return True
-        if "glucose" in prompt_lower or "blood sugar" in prompt_lower:
-            if marker.get("name") == "Glucose":
+        # Check for partial matches (e.g., "cholesterol" matches "Total Cholesterol")
+        marker_words = marker_name.split()
+        for word in marker_words:
+            if len(word) > 3 and word in prompt_lower:  # Only significant words
                 return True
     
     return False
@@ -190,26 +187,38 @@ def _handle_followup_question(markers: List[Dict[str, Any]], user_prompt: str, c
     return _generate_comprehensive_marker_response(markers, user_prompt)
 
 def _handle_specific_marker_question(markers: List[Dict[str, Any]], user_prompt: str) -> str:
-    """Handle questions about specific markers."""
+    """Handle questions about ANY specific marker - completely generalized."""
     prompt_lower = user_prompt.lower()
     
-    # Check for specific markers mentioned in the prompt
+    # Find the most relevant marker mentioned in the prompt
+    best_match = None
+    best_score = 0
+    
     for marker in markers:
         marker_name = marker.get("name", "").lower()
+        score = 0
         
-        # Direct name match
+        # Direct name match (highest score)
         if marker_name in prompt_lower:
-            return _get_marker_specific_response(marker, user_prompt)
+            score += 10
         
-        # Check aliases and variations
-        if ("hba1c" in prompt_lower or "a1c" in prompt_lower or "glycated" in prompt_lower) and marker.get("name") == "Hemoglobin A1C":
-            return _get_marker_specific_response(marker, user_prompt)
-        if "ferritin" in prompt_lower and marker.get("name") == "FERRITIN":
-            return _get_marker_specific_response(marker, user_prompt)
-        if ("glucose" in prompt_lower or "blood sugar" in prompt_lower) and marker.get("name") == "Glucose":
-            return _get_marker_specific_response(marker, user_prompt)
-        if "cholesterol" in prompt_lower and marker.get("name") in ["Total Cholesterol", "LDL", "HDL"]:
-            return _get_marker_specific_response(marker, user_prompt)
+        # Partial word matches
+        marker_words = marker_name.split()
+        for word in marker_words:
+            if len(word) > 3 and word in prompt_lower:
+                score += 5
+        
+        # Check for common variations
+        if any(variation in prompt_lower for variation in ['level', 'value', 'result', 'test']):
+            score += 2
+        
+        if score > best_score:
+            best_score = score
+            best_match = marker
+    
+    # If we found a good match, provide specific response
+    if best_match and best_score >= 5:
+        return _get_marker_specific_response(best_match, user_prompt)
     
     # If no specific marker found, provide comprehensive response
     return _generate_comprehensive_marker_response(markers, user_prompt)
@@ -545,12 +554,13 @@ def _assess_severity(markers: List[Dict[str, Any]], user_prompt: str) -> str:
     return "I'm not sure which marker you're asking about. Could you please specify which health marker you'd like me to assess?"
 
 def _get_marker_specific_response(marker: Dict[str, Any], user_prompt: str) -> str:
-    """Get a specific response for a particular marker."""
+    """Get a specific response for ANY marker - completely generalized."""
     name = marker.get("name", "")
     value = marker.get("value", "")
     unit = marker.get("unit", "")
     status = marker.get("status", "")
     recommendation = marker.get("recommendation", "")
+    normal_range = marker.get("normal_range", {})
     
     # Build comprehensive response
     response_parts = []
@@ -560,21 +570,32 @@ def _get_marker_specific_response(marker: Dict[str, Any], user_prompt: str) -> s
     response_parts.append(f"• **Your Value:** {value} {unit}")
     response_parts.append(f"• **Status:** {status.upper()}")
     
-    # Add explanation
-    explanation = _get_marker_explanation(marker)
+    # Add normal range if available
+    if normal_range:
+        min_val = normal_range.get('min')
+        max_val = normal_range.get('max')
+        if min_val is not None and max_val is not None:
+            response_parts.append(f"• **Normal Range:** {min_val}-{max_val} {unit}")
+        elif min_val is not None:
+            response_parts.append(f"• **Normal Range:** >{min_val} {unit}")
+        elif max_val is not None:
+            response_parts.append(f"• **Normal Range:** <{max_val} {unit}")
+    
+    # Add intelligent explanation
+    explanation = _get_generalized_marker_explanation(marker)
     response_parts.append(f"\n**What this means:** {explanation}")
     
-    # Add severity assessment
-    severity = _get_marker_severity(marker)
+    # Add intelligent severity assessment
+    severity = _get_generalized_severity(marker)
     response_parts.append(f"\n**Severity:** {severity}")
     
-    # Add causes if abnormal
+    # Add intelligent causes if abnormal
     if status != "normal":
-        causes = _get_marker_causes(marker)
+        causes = _get_generalized_causes(marker)
         response_parts.append(f"\n**Possible causes:** {causes}")
         
-        # Add treatment advice
-        treatment = _get_default_treatment_advice(name, status)
+        # Add intelligent treatment advice
+        treatment = _get_generalized_treatment(marker)
         response_parts.append(f"\n**Treatment approach:** {treatment}")
     
     # Add recommendation if available
@@ -585,6 +606,96 @@ def _get_marker_specific_response(marker: Dict[str, Any], user_prompt: str) -> s
     response_parts.append(f"\n**Next steps:** Discuss these results with your healthcare provider for personalized guidance.")
     
     return "\n".join(response_parts)
+
+def _get_generalized_marker_explanation(marker: Dict[str, Any]) -> str:
+    """Provide intelligent explanation for ANY marker."""
+    name = marker.get("name", "")
+    value = marker.get("value", "")
+    unit = marker.get("unit", "")
+    
+    # Try to get specific explanation first
+    specific_explanation = _get_marker_explanation(marker)
+    if specific_explanation and "is a health marker" not in specific_explanation:
+        return specific_explanation
+    
+    # Provide intelligent general explanation
+    if "cholesterol" in name.lower():
+        return f"{name} is a type of fat in your blood that your body uses for energy and cell building. High levels can increase heart disease risk."
+    elif "glucose" in name.lower() or "sugar" in name.lower():
+        return f"{name} is your body's main source of energy. It comes from the food you eat and is regulated by insulin."
+    elif "hemoglobin" in name.lower():
+        return f"{name} is a protein in red blood cells that carries oxygen throughout your body."
+    elif "creatinine" in name.lower():
+        return f"{name} is a waste product filtered by your kidneys. It's used to assess kidney function."
+    elif "ferritin" in name.lower():
+        return f"{name} is a protein that stores iron in your body. It's the best indicator of iron stores."
+    else:
+        return f"{name} is a health marker that your doctor uses to assess your overall health status. Your level of {value} {unit} helps determine if this marker is within normal ranges."
+
+def _get_generalized_severity(marker: Dict[str, Any]) -> str:
+    """Provide intelligent severity assessment for ANY marker."""
+    name = marker.get("name", "")
+    value = marker.get("value", "")
+    status = marker.get("status", "")
+    normal_range = marker.get("normal_range", {})
+    
+    if status == "normal":
+        return f"Your {name} level is within normal range and doesn't require immediate attention."
+    
+    # Calculate how far from normal
+    min_val = normal_range.get('min')
+    max_val = normal_range.get('max')
+    
+    if status == "high" and max_val:
+        deviation = ((value - max_val) / max_val) * 100
+        if deviation > 50:
+            return f"Your {name} level is significantly elevated ({deviation:.0f}% above normal). This requires prompt medical attention."
+        elif deviation > 20:
+            return f"Your {name} level is moderately elevated ({deviation:.0f}% above normal). This should be addressed with lifestyle changes and medical guidance."
+        else:
+            return f"Your {name} level is slightly elevated. This can often be managed with lifestyle modifications."
+    
+    elif status == "low" and min_val:
+        deviation = ((min_val - value) / min_val) * 100
+        if deviation > 50:
+            return f"Your {name} level is significantly low ({deviation:.0f}% below normal). This requires prompt medical attention."
+        elif deviation > 20:
+            return f"Your {name} level is moderately low ({deviation:.0f}% below normal). This should be addressed with dietary changes and medical guidance."
+        else:
+            return f"Your {name} level is slightly low. This can often be managed with dietary modifications."
+    
+    else:
+        return f"Your {name} level appears to be outside normal ranges. The severity should be evaluated by your healthcare provider."
+
+def _get_generalized_causes(marker: Dict[str, Any]) -> str:
+    """Provide intelligent causes for ANY abnormal marker."""
+    name = marker.get("name", "")
+    status = marker.get("status", "")
+    
+    if status == "high":
+        return f"High {name} levels can be caused by: poor diet, lack of exercise, obesity, stress, certain medications, genetic factors, or underlying medical conditions. Consult your healthcare provider for a thorough evaluation."
+    elif status == "low":
+        return f"Low {name} levels can be caused by: inadequate nutrition, poor absorption, blood loss, certain medications, genetic factors, or underlying medical conditions. Consult your healthcare provider for a thorough evaluation."
+    else:
+        return f"Abnormal {name} levels can have various causes. A comprehensive evaluation by your healthcare provider is recommended."
+
+def _get_generalized_treatment(marker: Dict[str, Any]) -> str:
+    """Provide intelligent treatment advice for ANY abnormal marker."""
+    name = marker.get("name", "")
+    status = marker.get("status", "")
+    
+    # Try specific treatment first
+    specific_treatment = _get_default_treatment_advice(name, status)
+    if specific_treatment and "Consult your healthcare provider" not in specific_treatment:
+        return specific_treatment
+    
+    # Provide generalized treatment advice
+    if status == "high":
+        return f"For high {name} levels: focus on lifestyle changes (diet, exercise, weight management), reduce stress, and consider medication if lifestyle changes aren't sufficient. Always work with your healthcare provider for personalized treatment."
+    elif status == "low":
+        return f"For low {name} levels: focus on dietary improvements, consider supplements under medical supervision, and address any underlying causes. Always work with your healthcare provider for personalized treatment."
+    else:
+        return f"For abnormal {name} levels: implement lifestyle changes, consider dietary modifications, and work closely with your healthcare provider for personalized treatment recommendations."
 
 def _get_default_treatment_advice(marker_name: str, status: str) -> str:
     """Get default treatment advice for a marker."""
