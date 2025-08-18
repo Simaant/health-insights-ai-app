@@ -70,30 +70,57 @@ def _generate_rag_enhanced_response(prompt: str, markers: Optional[List[Dict[str
     # Get medical knowledge for relevant markers
     medical_info = _extract_medical_knowledge(medical_knowledge)
     
-    # Check for specific question types with RAG context
-    if _is_doctor_question(prompt_lower):
-        return _handle_doctor_question_rag(markers, prompt, medical_info, user_id)
+    # Analyze the specific question and context
+    question_analysis = _analyze_user_question(prompt_lower, markers, chat_history)
     
-    if _is_treatment_question(prompt_lower):
-        return _handle_treatment_question_rag(markers, prompt, medical_info, user_id)
+    # Route to appropriate handler based on question analysis
+    if question_analysis["question_type"] == "specific_marker":
+        return _handle_specific_marker_question_enhanced(markers, prompt, medical_info, question_analysis, user_id)
     
-    if _is_food_question(prompt_lower):
-        return _handle_food_question_rag(markers, prompt, medical_info, user_id)
+    if question_analysis["question_type"] == "food_diet":
+        return _handle_food_question_enhanced(markers, prompt, medical_info, question_analysis, user_id)
     
-    if _is_symptom_question(prompt_lower):
-        return _handle_symptom_question_rag(markers, prompt, medical_info, user_id)
+    if question_analysis["question_type"] == "testing":
+        return _handle_testing_question_enhanced(markers, prompt, medical_info, question_analysis, user_id)
     
-    if _is_testing_question(prompt_lower):
-        return _handle_testing_question_rag(markers, prompt, medical_info, user_id)
-    
-    if _is_specific_marker_question(prompt_lower, markers or []):
-        return _handle_specific_marker_question_rag(markers, prompt, medical_info, user_id)
-    
-    if _is_followup_question(prompt_lower, chat_history):
-        return _handle_followup_question_rag(markers, prompt, medical_info, chat_history, user_id)
+    if question_analysis["question_type"] == "general_info":
+        return _handle_general_info_question(markers, prompt, medical_info, question_analysis, user_id)
     
     # Default comprehensive response with RAG
-    return _generate_comprehensive_marker_response_rag(markers, prompt, medical_info, user_id)
+    return _generate_comprehensive_marker_response_enhanced(markers, prompt, medical_info, question_analysis, user_id)
+
+def _analyze_user_question(prompt: str, markers: Optional[List[Dict[str, Any]]], chat_history: Optional[List[Dict[str, str]]]) -> Dict[str, Any]:
+    """Analyze user question to understand intent and context."""
+    prompt_lower = prompt.lower()
+    
+    # Extract mentioned markers from the question
+    mentioned_markers = []
+    if markers:
+        for marker in markers:
+            marker_name = marker.get("name", "").lower()
+            marker_words = marker_name.split()
+            
+            # Check for exact match or partial matches
+            if (marker_name in prompt_lower or 
+                any(word in prompt_lower for word in marker_words if len(word) > 2)):
+                mentioned_markers.append(marker)
+    
+    # Determine question type
+    question_type = "general_info"
+    
+    if any(word in prompt_lower for word in ["food", "eat", "diet", "nutrition", "vitamin", "supplement"]):
+        question_type = "food_diet"
+    elif any(word in prompt_lower for word in ["test", "retest", "monitor", "check", "when", "schedule"]):
+        question_type = "testing"
+    elif mentioned_markers:
+        question_type = "specific_marker"
+    
+    return {
+        "question_type": question_type,
+        "mentioned_markers": mentioned_markers,
+        "prompt": prompt,
+        "prompt_lower": prompt_lower
+    }
 
 def _generate_intelligent_response(markers: List[Dict[str, Any]], user_prompt: str, chat_history: Optional[List[Dict[str, str]]] = None) -> str:
     """Generate intelligent, context-aware responses based on user's health markers."""
@@ -1208,44 +1235,128 @@ def _extract_medical_knowledge(medical_knowledge: Dict[str, Any]) -> Dict[str, A
     
     return knowledge
 
-def _handle_specific_marker_question_rag(markers: Optional[List[Dict[str, Any]]], prompt: str, medical_info: Dict[str, Any], user_id: str) -> str:
-    """Handle specific marker questions with RAG context."""
-    prompt_lower = prompt.lower()
+def _handle_specific_marker_question_enhanced(markers: Optional[List[Dict[str, Any]]], prompt: str, medical_info: Dict[str, Any], question_analysis: Dict[str, Any], user_id: str) -> str:
+    """Handle specific marker questions with enhanced context understanding."""
+    prompt_lower = question_analysis["prompt_lower"]
+    mentioned_markers = question_analysis["mentioned_markers"]
     
-    # Search for markers in user's data
-    if not markers:
-        # Try to find markers from RAG
-        search_results = rag_manager.search_similar_markers(user_id, prompt)
-        if search_results.get("documents"):
-            markers = _extract_markers_from_rag(search_results)
+    # If no markers mentioned in question, try to find from user data
+    if not mentioned_markers and markers:
+        # Find the most relevant marker based on the question
+        best_match = None
+        best_score = 0
+        
+        for marker in markers:
+            marker_name = marker.get("name", "").lower()
+            score = 0
+            
+            # Check for exact match
+            if marker_name in prompt_lower:
+                score += 10
+            
+            # Check for partial matches
+            marker_words = marker_name.split()
+            for word in marker_words:
+                if len(word) > 2 and word in prompt_lower:
+                    score += 5
+            
+            # Check for synonyms
+            synonyms = _get_marker_synonyms(marker_name)
+            for synonym in synonyms:
+                if synonym in prompt_lower:
+                    score += 8
+            
+            if score > best_score:
+                best_score = score
+                best_match = marker
+        
+        if best_match and best_score >= 5:
+            mentioned_markers = [best_match]
     
-    if not markers:
+    # If still no markers found, search RAG
+    if not mentioned_markers:
+        try:
+            search_results = rag_manager.search_similar_markers(user_id, prompt)
+            if search_results.get("documents"):
+                rag_markers = _extract_markers_from_rag(search_results)
+                if rag_markers:
+                    mentioned_markers = rag_markers[:1]  # Take the most relevant one
+        except:
+            pass
+    
+    if not mentioned_markers:
         return _handle_unknown_marker_question(prompt, medical_info)
     
-    # Find the most relevant marker
-    best_match = None
-    best_score = 0
+    # Generate response for the most relevant marker
+    target_marker = mentioned_markers[0]
+    return _get_marker_specific_response_enhanced(target_marker, prompt, medical_info, question_analysis)
+
+def _get_marker_specific_response_enhanced(marker: Dict[str, Any], prompt: str, medical_info: Dict[str, Any], question_analysis: Dict[str, Any]) -> str:
+    """Get a specific response for a marker with enhanced formatting."""
+    name = marker.get("name", "")
+    value = marker.get("value", "")
+    unit = marker.get("unit", "")
+    status = marker.get("status", "")
+    normal_range = marker.get("normal_range", "")
+    medical_knowledge = medical_info.get(name.lower(), [])
     
-    for marker in markers:
-        marker_name = marker.get("name", "").lower()
-        score = 0
-        
-        if marker_name in prompt_lower:
-            score += 10
-        
-        marker_words = marker_name.split()
-        for word in marker_words:
-            if len(word) > 3 and word in prompt_lower:
-                score += 5
-        
-        if score > best_score:
-            best_score = score
-            best_match = marker
+    response_parts = []
+    response_parts.append(f"📊 **{name} Analysis**")
+    response_parts.append("")
     
-    if best_match and best_score >= 5:
-        return _get_marker_specific_response_rag(best_match, prompt, medical_info)
+    # Results section
+    response_parts.append("**Your Results:**")
+    response_parts.append(f"• Value: {value} {unit}")
+    response_parts.append(f"• Status: {status.upper()}")
+    if normal_range:
+        response_parts.append(f"• Normal Range: {normal_range}")
+    response_parts.append("")
     
-    return _generate_comprehensive_marker_response_rag(markers, prompt, medical_info, user_id)
+    # Medical information section
+    if medical_knowledge:
+        response_parts.append("📋 **Medical Information**")
+        for knowledge in medical_knowledge[:2]:
+            response_parts.append(knowledge)
+        response_parts.append("")
+    
+    # Personalized recommendations based on status
+    if status != "normal":
+        response_parts.append("💡 **Personalized Recommendations**")
+        
+        if "low" in status.lower():
+            response_parts.append("Based on your low levels, consider:")
+            response_parts.append("• Dietary Changes: Focus on foods rich in this nutrient")
+            response_parts.append("• Supplements: Consider supplementation under medical supervision")
+            response_parts.append("• Lifestyle: Address underlying causes")
+        elif "high" in status.lower():
+            response_parts.append("Based on your elevated levels, consider:")
+            response_parts.append("• Medical Evaluation: Consult your healthcare provider")
+            response_parts.append("• Monitoring: Regular follow-up testing")
+            response_parts.append("• Lifestyle: Address contributing factors")
+        
+        response_parts.append("")
+    
+    # Next steps
+    response_parts.append("🎯 **Next Steps**")
+    response_parts.append("Discuss these results with your healthcare provider for personalized guidance.")
+    
+    return "\n".join(response_parts)
+
+def _get_marker_synonyms(marker_name: str) -> List[str]:
+    """Get synonyms for common medical markers."""
+    synonyms = {
+        "ferritin": ["iron", "iron stores", "iron level", "iron deficiency"],
+        "vitamin d": ["vit d", "25-oh vitamin d", "25-hydroxyvitamin d", "vitamin d3"],
+        "vitamin b12": ["b12", "cobalamin", "vitamin b-12"],
+        "cholesterol": ["total cholesterol", "hdl", "ldl", "lipids"],
+        "glucose": ["blood sugar", "blood glucose", "sugar"],
+        "tsh": ["thyroid stimulating hormone", "thyroid", "thyroid function"],
+        "hemoglobin": ["hgb", "hb", "red blood cells"],
+        "creatinine": ["kidney function", "renal function", "kidney"],
+        "alt": ["alanine aminotransferase", "liver function", "liver"],
+        "ast": ["aspartate aminotransferase", "liver function", "liver"]
+    }
+    return synonyms.get(marker_name.lower(), [])
 
 def _handle_unknown_marker_question(prompt: str, medical_info: Dict[str, Any]) -> str:
     """Handle questions about markers not in user's data."""
@@ -1372,14 +1483,341 @@ def _handle_doctor_question_rag(markers, prompt, medical_info, user_id):
 def _handle_treatment_question_rag(markers, prompt, medical_info, user_id):
     return _handle_treatment_question(markers or [], prompt)
 
-def _handle_food_question_rag(markers, prompt, medical_info, user_id):
-    return _handle_food_question(markers or [], prompt)
+def _handle_food_question_enhanced(markers: Optional[List[Dict[str, Any]]], prompt: str, medical_info: Dict[str, Any], question_analysis: Dict[str, Any], user_id: str) -> str:
+    """Handle food and diet questions with enhanced context understanding."""
+    prompt_lower = question_analysis["prompt_lower"]
+    mentioned_markers = question_analysis["mentioned_markers"]
+    
+    # If specific markers mentioned, provide targeted food advice
+    if mentioned_markers:
+        target_marker = mentioned_markers[0]
+        marker_name = target_marker.get("name", "").lower()
+        status = target_marker.get("status", "")
+        
+        if "cholesterol" in marker_name:
+            if "low" in status:
+                return _get_cholesterol_food_advice_low()
+            elif "high" in status:
+                return _get_cholesterol_food_advice_high()
+            else:
+                return _get_cholesterol_food_advice_general()
+        
+        elif "ferritin" in marker_name or "iron" in marker_name:
+            if "low" in status:
+                return _get_iron_food_advice_low()
+            else:
+                return _get_iron_food_advice_general()
+        
+        elif "vitamin d" in marker_name:
+            if "low" in status:
+                return _get_vitamin_d_food_advice_low()
+            else:
+                return _get_vitamin_d_food_advice_general()
+        
+        elif "glucose" in marker_name or "blood sugar" in marker_name:
+            if "high" in status:
+                return _get_glucose_food_advice_high()
+            else:
+                return _get_glucose_food_advice_general()
+    
+    # If no specific markers mentioned, provide general advice
+    return _get_general_food_advice()
+
+def _get_cholesterol_food_advice_low() -> str:
+    """Get food advice for low cholesterol."""
+    return ("🥩 **Foods for Low Cholesterol**\n\n"
+            "**Foods to Include:**\n"
+            "• Healthy Fats: Avocados, nuts, seeds, olive oil\n"
+            "• Fatty Fish: Salmon, tuna, mackerel, sardines\n"
+            "• Eggs: Whole eggs in moderation\n"
+            "• Dairy: Full-fat dairy products\n"
+            "• Coconut: Coconut oil, coconut milk\n\n"
+            "**Foods to Avoid:**\n"
+            "• Trans fats: Processed foods, fried foods\n"
+            "• Excessive sugar: Sugary drinks, desserts\n\n"
+            "**Note:** Low cholesterol is usually beneficial, but consult your doctor if levels are extremely low.")
+
+def _get_cholesterol_food_advice_high() -> str:
+    """Get food advice for high cholesterol."""
+    return ("🥗 **Foods for High Cholesterol**\n\n"
+            "**Foods to Include:**\n"
+            "• Fiber-Rich Foods: Oats, beans, lentils, fruits, vegetables\n"
+            "• Omega-3 Sources: Fatty fish, walnuts, flaxseeds\n"
+            "• Plant Sterols: Fortified margarines, nuts\n"
+            "• Lean Proteins: Skinless poultry, fish, legumes\n\n"
+            "**Foods to Limit:**\n"
+            "• Saturated Fats: Red meat, full-fat dairy, butter\n"
+            "• Trans Fats: Processed foods, fried foods\n"
+            "• Added Sugars: Sugary drinks, desserts\n\n"
+            "**Lifestyle Tips:**\n"
+            "• Exercise regularly (150 minutes/week)\n"
+            "• Maintain a healthy weight\n"
+            "• Consider medication if lifestyle changes aren't sufficient")
+
+def _get_cholesterol_food_advice_general() -> str:
+    """Get general cholesterol food advice."""
+    return ("🥗 **Cholesterol-Friendly Diet**\n\n"
+            "**Heart-Healthy Foods:**\n"
+            "• Fiber: Oats, beans, fruits, vegetables\n"
+            "• Omega-3: Fatty fish, walnuts, flaxseeds\n"
+            "• Healthy Fats: Olive oil, avocados, nuts\n"
+            "• Lean Proteins: Fish, poultry, legumes\n\n"
+            "**Foods to Limit:**\n"
+            "• Saturated fats: Red meat, full-fat dairy\n"
+            "• Trans fats: Processed foods, fried foods\n"
+            "• Added sugars: Sugary drinks, desserts\n\n"
+            "**General Guidelines:**\n"
+            "• Focus on whole, unprocessed foods\n"
+            "• Include plenty of fruits and vegetables\n"
+            "• Choose lean protein sources\n"
+            "• Limit processed and fried foods")
+
+def _get_iron_food_advice_low() -> str:
+    """Get food advice for low iron/ferritin."""
+    return ("🥩 **Iron-Rich Foods for Low Ferritin**\n\n"
+            "**High-Iron Foods:**\n"
+            "• Red Meat: Lean beef, lamb, and pork\n"
+            "• Poultry: Chicken and turkey (dark meat)\n"
+            "• Fish: Tuna, salmon, and sardines\n"
+            "• Legumes: Beans, lentils, and chickpeas\n"
+            "• Dark Leafy Greens: Spinach, kale, and Swiss chard\n"
+            "• Fortified Foods: Cereals, breads, and pasta\n\n"
+            "**Enhance Iron Absorption:**\n"
+            "• Vitamin C Foods: Citrus fruits, bell peppers, tomatoes\n"
+            "• Avoid with Coffee/Tea: Wait 1-2 hours after meals\n"
+            "• Cook in Cast Iron: Can increase iron content\n\n"
+            "**Recommended Daily Intake:** 18mg for women, 8mg for men")
+
+def _get_iron_food_advice_general() -> str:
+    """Get general iron food advice."""
+    return ("🥩 **Iron-Rich Diet**\n\n"
+            "**Good Iron Sources:**\n"
+            "• Animal Sources: Red meat, poultry, fish\n"
+            "• Plant Sources: Beans, lentils, spinach, fortified cereals\n"
+            "• Absorption Boosters: Vitamin C-rich foods\n\n"
+            "**Tips for Better Absorption:**\n"
+            "• Pair iron foods with vitamin C\n"
+            "• Avoid coffee/tea with meals\n"
+            "• Cook in cast iron pans")
+
+def _get_vitamin_d_food_advice_low() -> str:
+    """Get food advice for low vitamin D."""
+    return ("🐟 **Vitamin D-Rich Foods**\n\n"
+            "**Food Sources:**\n"
+            "• Fatty Fish: Salmon, tuna, mackerel, sardines\n"
+            "• Egg Yolks: From pasture-raised chickens\n"
+            "• Fortified Dairy: Milk, yogurt, cheese\n"
+            "• Mushrooms: Exposed to UV light\n"
+            "• Fortified Plant Milk: Almond, soy, oat milk\n\n"
+            "**Additional Sources:**\n"
+            "• Sunlight: 10-15 minutes daily on arms/face\n"
+            "• Supplements: Consider vitamin D3 supplements\n\n"
+            "**Note:** Food sources alone may not be sufficient for low levels")
+
+def _get_vitamin_d_food_advice_general() -> str:
+    """Get general vitamin D food advice."""
+    return ("🐟 **Vitamin D Sources**\n\n"
+            "**Food Sources:**\n"
+            "• Fatty Fish: Salmon, tuna, mackerel\n"
+            "• Egg Yolks: Especially from pasture-raised chickens\n"
+            "• Fortified Foods: Milk, cereals, plant milks\n"
+            "• Mushrooms: UV-exposed varieties\n\n"
+            "**Lifestyle:**\n"
+            "• Moderate sun exposure\n"
+            "• Consider supplements if needed")
+
+def _get_glucose_food_advice_high() -> str:
+    """Get food advice for high glucose."""
+    return ("🥗 **Blood Sugar Management Diet**\n\n"
+            "**Foods to Include:**\n"
+            "• Complex Carbs: Whole grains, legumes, vegetables\n"
+            "• Fiber: Fruits, vegetables, nuts, seeds\n"
+            "• Lean Proteins: Fish, poultry, legumes\n"
+            "• Healthy Fats: Nuts, olive oil, avocados\n\n"
+            "**Foods to Limit:**\n"
+            "• Simple Sugars: Candy, soda, desserts\n"
+            "• Refined Carbs: White bread, pasta, rice\n"
+            "• Processed Foods: Packaged snacks, fast food\n\n"
+            "**Lifestyle Tips:**\n"
+            "• Eat regular meals\n"
+            "• Exercise regularly\n"
+            "• Monitor blood sugar levels")
+
+def _get_glucose_food_advice_general() -> str:
+    """Get general glucose food advice."""
+    return ("🥗 **Blood Sugar-Friendly Diet**\n\n"
+            "**Good Choices:**\n"
+            "• Complex carbohydrates: Whole grains, legumes\n"
+            "• High-fiber foods: Fruits, vegetables, nuts\n"
+            "• Lean proteins: Fish, poultry, legumes\n"
+            "• Healthy fats: Nuts, olive oil\n\n"
+            "**Limit:**\n"
+            "• Simple sugars and refined carbs\n"
+            "• Processed foods\n\n"
+            "**Tips:**\n"
+            "• Eat regular meals\n"
+            "• Include protein with carbs\n"
+            "• Exercise regularly")
+
+def _get_general_food_advice() -> str:
+    """Get general healthy eating advice."""
+    return ("🍎 **General Healthy Eating Guidelines**\n\n"
+            "**Balanced Nutrition:**\n"
+            "• Whole Foods: Fresh fruits, vegetables, whole grains\n"
+            "• Lean Proteins: Fish, poultry, legumes, eggs\n"
+            "• Healthy Fats: Nuts, seeds, olive oil, avocados\n"
+            "• Fiber: 25-30 grams daily from various sources\n\n"
+            "**Daily Recommendations:**\n"
+            "• Vegetables: 2-3 cups daily\n"
+            "• Fruits: 1-2 servings daily\n"
+            "• Proteins: Lean sources with each meal\n"
+            "• Hydration: 8-10 glasses of water daily\n\n"
+            "**Tips:**\n"
+            "• Limit processed foods\n"
+            "• Reduce added sugars\n"
+            "• Cook at home when possible\n"
+            "• Practice portion control")
 
 def _handle_symptom_question_rag(markers, prompt, medical_info, user_id):
     return _handle_symptom_question(markers or [], prompt)
 
-def _handle_testing_question_rag(markers, prompt, medical_info, user_id):
-    return _handle_testing_question(markers or [], prompt)
+def _handle_testing_question_enhanced(markers: Optional[List[Dict[str, Any]]], prompt: str, medical_info: Dict[str, Any], question_analysis: Dict[str, Any], user_id: str) -> str:
+    """Handle testing questions with enhanced context understanding."""
+    prompt_lower = question_analysis["prompt_lower"]
+    mentioned_markers = question_analysis["mentioned_markers"]
+    
+    # If specific markers mentioned, provide targeted testing advice
+    if mentioned_markers:
+        target_marker = mentioned_markers[0]
+        marker_name = target_marker.get("name", "").lower()
+        status = target_marker.get("status", "")
+        
+        if "cholesterol" in marker_name:
+            return _get_cholesterol_testing_advice(status)
+        elif "ferritin" in marker_name or "iron" in marker_name:
+            return _get_ferritin_testing_advice(status)
+        elif "vitamin d" in marker_name:
+            return _get_vitamin_d_testing_advice(status)
+        elif "glucose" in marker_name or "blood sugar" in marker_name:
+            return _get_glucose_testing_advice(status)
+    
+    # General testing advice
+    return _get_general_testing_advice()
+
+def _get_cholesterol_testing_advice(status: str) -> str:
+    """Get cholesterol testing advice."""
+    if "high" in status.lower():
+        return ("🩸 **Cholesterol Testing Schedule**\n\n"
+                "**For High Cholesterol:**\n"
+                "• Retest in 3-6 months after lifestyle changes\n"
+                "• Monitor other cardiovascular risk factors\n"
+                "• Consider more frequent testing if very high\n"
+                "• Your doctor may recommend medication\n\n"
+                "**What to Expect:**\n"
+                "• Lifestyle changes can improve levels\n"
+                "• Medication may be needed for very high levels\n"
+                "• Regular monitoring helps track progress")
+    else:
+        return ("🩸 **Cholesterol Testing Schedule**\n\n"
+                "**General Guidelines:**\n"
+                "• Adults: Every 4-6 years if normal\n"
+                "• More frequent if risk factors present\n"
+                "• Fasting required for accurate results\n\n"
+                "**Risk Factors for More Frequent Testing:**\n"
+                "• Family history of heart disease\n"
+                "• Diabetes or other health conditions\n"
+                "• Smoking or obesity\n"
+                "• Previous high results")
+
+def _get_ferritin_testing_advice(status: str) -> str:
+    """Get ferritin testing advice."""
+    if "low" in status.lower():
+        return ("🩸 **Ferritin Testing Schedule**\n\n"
+                "**For Low Ferritin:**\n"
+                "• Retest in 3-6 months after starting treatment\n"
+                "• Monitor iron levels (serum iron, TIBC)\n"
+                "• Check for underlying causes if levels don't improve\n"
+                "• Consider additional iron studies\n\n"
+                "**What to Expect:**\n"
+                "• Ferritin levels should increase with proper treatment\n"
+                "• Your doctor may also check complete blood count (CBC)\n"
+                "• Follow-up testing helps monitor treatment effectiveness")
+    else:
+        return ("🩸 **Ferritin Testing Schedule**\n\n"
+                "**General Guidelines:**\n"
+                "• Part of routine iron studies\n"
+                "• May be checked with CBC\n"
+                "• Fasting not usually required\n\n"
+                "**When to Test:**\n"
+                "• Symptoms of iron deficiency\n"
+                "• Routine health checkups\n"
+                "• Monitoring iron supplementation")
+
+def _get_vitamin_d_testing_advice(status: str) -> str:
+    """Get vitamin D testing advice."""
+    if "low" in status.lower():
+        return ("🩸 **Vitamin D Testing Schedule**\n\n"
+                "**For Low Vitamin D:**\n"
+                "• Retest in 3-6 months after supplementation\n"
+                "• Monitor calcium levels if supplementing\n"
+                "• Check for underlying causes\n"
+                "• Seasonal testing may be recommended\n\n"
+                "**What to Expect:**\n"
+                "• Levels should improve with supplementation\n"
+                "• Sunlight exposure affects levels\n"
+                "• Regular monitoring ensures proper dosing")
+    else:
+        return ("🩸 **Vitamin D Testing Schedule**\n\n"
+                "**General Guidelines:**\n"
+                "• 25-OH Vitamin D is the standard test\n"
+                "• Fasting not required\n"
+                "• Seasonal variations are normal\n\n"
+                "**When to Test:**\n"
+                "• Symptoms of deficiency\n"
+                "• Risk factors (limited sun exposure)\n"
+                "• Monitoring supplementation")
+
+def _get_glucose_testing_advice(status: str) -> str:
+    """Get glucose testing advice."""
+    if "high" in status.lower():
+        return ("🩸 **Blood Sugar Testing Schedule**\n\n"
+                "**For High Glucose:**\n"
+                "• More frequent monitoring may be needed\n"
+                "• Consider HbA1c testing\n"
+                "• Monitor fasting and post-meal levels\n"
+                "• Your doctor may recommend medication\n\n"
+                "**What to Expect:**\n"
+                "• Lifestyle changes can improve levels\n"
+                "• Regular monitoring is important\n"
+                "• Medication may be needed for diabetes")
+    else:
+        return ("🩸 **Blood Sugar Testing Schedule**\n\n"
+                "**General Guidelines:**\n"
+                "• Fasting glucose: Every 3 years if normal\n"
+                "• More frequent if risk factors present\n"
+                "• Fasting required for accurate results\n\n"
+                "**Risk Factors for More Frequent Testing:**\n"
+                "• Family history of diabetes\n"
+                "• Obesity or sedentary lifestyle\n"
+                "• Previous high results\n"
+                "• Age over 45")
+
+def _get_general_testing_advice() -> str:
+    """Get general testing advice."""
+    return ("🩸 **General Health Testing Guidelines**\n\n"
+            "**Routine Testing:**\n"
+            "• Annual physical exam with basic labs\n"
+            "• Follow your doctor's recommended schedule\n"
+            "• More frequent testing if risk factors present\n\n"
+            "**When to Test More Frequently:**\n"
+            "• Abnormal previous results\n"
+            "• New symptoms or health changes\n"
+            "• Starting new medications\n"
+            "• Family history of health conditions\n\n"
+            "**Tips:**\n"
+            "• Keep records of your test results\n"
+            "• Discuss any concerns with your doctor\n"
+            "• Follow preparation instructions (fasting, etc.)")
 
 def _handle_followup_question_rag(markers, prompt, medical_info, chat_history, user_id):
     return _handle_followup_question(markers or [], prompt, chat_history)
