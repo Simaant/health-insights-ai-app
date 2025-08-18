@@ -1316,7 +1316,7 @@ def _get_marker_specific_response_enhanced(marker: Dict[str, Any], prompt: str, 
     if medical_knowledge:
         response_parts.append("📋 **Medical Information**")
         for knowledge in medical_knowledge[:2]:
-            response_parts.append(knowledge)
+            response_parts.append(f"• {knowledge}")
         response_parts.append("")
     
     # Personalized recommendations based on status
@@ -1325,20 +1325,20 @@ def _get_marker_specific_response_enhanced(marker: Dict[str, Any], prompt: str, 
         
         if "low" in status.lower():
             response_parts.append("Based on your low levels, consider:")
-            response_parts.append("• Dietary Changes: Focus on foods rich in this nutrient")
-            response_parts.append("• Supplements: Consider supplementation under medical supervision")
-            response_parts.append("• Lifestyle: Address underlying causes")
+            response_parts.append("• **Dietary Changes:** Focus on foods rich in this nutrient")
+            response_parts.append("• **Supplements:** Consider supplementation under medical supervision")
+            response_parts.append("• **Lifestyle:** Address underlying causes")
         elif "high" in status.lower():
             response_parts.append("Based on your elevated levels, consider:")
-            response_parts.append("• Medical Evaluation: Consult your healthcare provider")
-            response_parts.append("• Monitoring: Regular follow-up testing")
-            response_parts.append("• Lifestyle: Address contributing factors")
+            response_parts.append("• **Medical Evaluation:** Consult your healthcare provider")
+            response_parts.append("• **Monitoring:** Regular follow-up testing")
+            response_parts.append("• **Lifestyle:** Address contributing factors")
         
         response_parts.append("")
     
     # Next steps
     response_parts.append("🎯 **Next Steps**")
-    response_parts.append("Discuss these results with your healthcare provider for personalized guidance.")
+    response_parts.append("• Discuss these results with your healthcare provider for personalized guidance.")
     
     return "\n".join(response_parts)
 
@@ -1527,156 +1527,156 @@ def _get_cholesterol_food_advice_low() -> str:
     """Get food advice for low cholesterol."""
     return ("🥩 **Foods for Low Cholesterol**\n\n"
             "**Foods to Include:**\n"
-            "• Healthy Fats: Avocados, nuts, seeds, olive oil\n"
-            "• Fatty Fish: Salmon, tuna, mackerel, sardines\n"
-            "• Eggs: Whole eggs in moderation\n"
-            "• Dairy: Full-fat dairy products\n"
-            "• Coconut: Coconut oil, coconut milk\n\n"
+            "• **Healthy Fats:** Avocados, nuts, seeds, olive oil\n"
+            "• **Fatty Fish:** Salmon, tuna, mackerel, sardines\n"
+            "• **Eggs:** Whole eggs in moderation\n"
+            "• **Dairy:** Full-fat dairy products\n"
+            "• **Coconut:** Coconut oil, coconut milk\n\n"
             "**Foods to Avoid:**\n"
-            "• Trans fats: Processed foods, fried foods\n"
-            "• Excessive sugar: Sugary drinks, desserts\n\n"
+            "• **Trans fats:** Processed foods, fried foods\n"
+            "• **Excessive sugar:** Sugary drinks, desserts\n\n"
             "**Note:** Low cholesterol is usually beneficial, but consult your doctor if levels are extremely low.")
 
 def _get_cholesterol_food_advice_high() -> str:
     """Get food advice for high cholesterol."""
     return ("🥗 **Foods for High Cholesterol**\n\n"
             "**Foods to Include:**\n"
-            "• Fiber-Rich Foods: Oats, beans, lentils, fruits, vegetables\n"
-            "• Omega-3 Sources: Fatty fish, walnuts, flaxseeds\n"
-            "• Plant Sterols: Fortified margarines, nuts\n"
-            "• Lean Proteins: Skinless poultry, fish, legumes\n\n"
+            "• **Fiber-Rich Foods:** Oats, beans, lentils, fruits, vegetables\n"
+            "• **Omega-3 Sources:** Fatty fish, walnuts, flaxseeds\n"
+            "• **Plant Sterols:** Fortified margarines, nuts\n"
+            "• **Lean Proteins:** Skinless poultry, fish, legumes\n\n"
             "**Foods to Limit:**\n"
-            "• Saturated Fats: Red meat, full-fat dairy, butter\n"
-            "• Trans Fats: Processed foods, fried foods\n"
-            "• Added Sugars: Sugary drinks, desserts\n\n"
+            "• **Saturated Fats:** Red meat, full-fat dairy, butter\n"
+            "• **Trans Fats:** Processed foods, fried foods\n"
+            "• **Added Sugars:** Sugary drinks, desserts\n\n"
             "**Lifestyle Tips:**\n"
-            "• Exercise regularly (150 minutes/week)\n"
-            "• Maintain a healthy weight\n"
-            "• Consider medication if lifestyle changes aren't sufficient")
+            "• **Exercise regularly:** 150 minutes/week\n"
+            "• **Maintain a healthy weight**\n"
+            "• **Consider medication:** If lifestyle changes aren't sufficient")
 
 def _get_cholesterol_food_advice_general() -> str:
     """Get general cholesterol food advice."""
     return ("🥗 **Cholesterol-Friendly Diet**\n\n"
             "**Heart-Healthy Foods:**\n"
-            "• Fiber: Oats, beans, fruits, vegetables\n"
-            "• Omega-3: Fatty fish, walnuts, flaxseeds\n"
-            "• Healthy Fats: Olive oil, avocados, nuts\n"
-            "• Lean Proteins: Fish, poultry, legumes\n\n"
+            "• **Fiber:** Oats, beans, fruits, vegetables\n"
+            "• **Omega-3:** Fatty fish, walnuts, flaxseeds\n"
+            "• **Healthy Fats:** Olive oil, avocados, nuts\n"
+            "• **Lean Proteins:** Fish, poultry, legumes\n\n"
             "**Foods to Limit:**\n"
-            "• Saturated fats: Red meat, full-fat dairy\n"
-            "• Trans fats: Processed foods, fried foods\n"
-            "• Added sugars: Sugary drinks, desserts\n\n"
+            "• **Saturated fats:** Red meat, full-fat dairy\n"
+            "• **Trans fats:** Processed foods, fried foods\n"
+            "• **Added sugars:** Sugary drinks, desserts\n\n"
             "**General Guidelines:**\n"
-            "• Focus on whole, unprocessed foods\n"
-            "• Include plenty of fruits and vegetables\n"
-            "• Choose lean protein sources\n"
-            "• Limit processed and fried foods")
+            "• **Focus on whole, unprocessed foods**\n"
+            "• **Include plenty of fruits and vegetables**\n"
+            "• **Choose lean protein sources**\n"
+            "• **Limit processed and fried foods**")
 
 def _get_iron_food_advice_low() -> str:
     """Get food advice for low iron/ferritin."""
     return ("🥩 **Iron-Rich Foods for Low Ferritin**\n\n"
             "**High-Iron Foods:**\n"
-            "• Red Meat: Lean beef, lamb, and pork\n"
-            "• Poultry: Chicken and turkey (dark meat)\n"
-            "• Fish: Tuna, salmon, and sardines\n"
-            "• Legumes: Beans, lentils, and chickpeas\n"
-            "• Dark Leafy Greens: Spinach, kale, and Swiss chard\n"
-            "• Fortified Foods: Cereals, breads, and pasta\n\n"
+            "• **Red Meat:** Lean beef, lamb, and pork\n"
+            "• **Poultry:** Chicken and turkey (dark meat)\n"
+            "• **Fish:** Tuna, salmon, and sardines\n"
+            "• **Legumes:** Beans, lentils, and chickpeas\n"
+            "• **Dark Leafy Greens:** Spinach, kale, and Swiss chard\n"
+            "• **Fortified Foods:** Cereals, breads, and pasta\n\n"
             "**Enhance Iron Absorption:**\n"
-            "• Vitamin C Foods: Citrus fruits, bell peppers, tomatoes\n"
-            "• Avoid with Coffee/Tea: Wait 1-2 hours after meals\n"
-            "• Cook in Cast Iron: Can increase iron content\n\n"
+            "• **Vitamin C Foods:** Citrus fruits, bell peppers, tomatoes\n"
+            "• **Avoid with Coffee/Tea:** Wait 1-2 hours after meals\n"
+            "• **Cook in Cast Iron:** Can increase iron content\n\n"
             "**Recommended Daily Intake:** 18mg for women, 8mg for men")
 
 def _get_iron_food_advice_general() -> str:
     """Get general iron food advice."""
     return ("🥩 **Iron-Rich Diet**\n\n"
             "**Good Iron Sources:**\n"
-            "• Animal Sources: Red meat, poultry, fish\n"
-            "• Plant Sources: Beans, lentils, spinach, fortified cereals\n"
-            "• Absorption Boosters: Vitamin C-rich foods\n\n"
+            "• **Animal Sources:** Red meat, poultry, fish\n"
+            "• **Plant Sources:** Beans, lentils, spinach, fortified cereals\n"
+            "• **Absorption Boosters:** Vitamin C-rich foods\n\n"
             "**Tips for Better Absorption:**\n"
-            "• Pair iron foods with vitamin C\n"
-            "• Avoid coffee/tea with meals\n"
-            "• Cook in cast iron pans")
+            "• **Pair iron foods with vitamin C**\n"
+            "• **Avoid coffee/tea with meals**\n"
+            "• **Cook in cast iron pans**")
 
 def _get_vitamin_d_food_advice_low() -> str:
     """Get food advice for low vitamin D."""
     return ("🐟 **Vitamin D-Rich Foods**\n\n"
             "**Food Sources:**\n"
-            "• Fatty Fish: Salmon, tuna, mackerel, sardines\n"
-            "• Egg Yolks: From pasture-raised chickens\n"
-            "• Fortified Dairy: Milk, yogurt, cheese\n"
-            "• Mushrooms: Exposed to UV light\n"
-            "• Fortified Plant Milk: Almond, soy, oat milk\n\n"
+            "• **Fatty Fish:** Salmon, tuna, mackerel, sardines\n"
+            "• **Egg Yolks:** From pasture-raised chickens\n"
+            "• **Fortified Dairy:** Milk, yogurt, cheese\n"
+            "• **Mushrooms:** Exposed to UV light\n"
+            "• **Fortified Plant Milk:** Almond, soy, oat milk\n\n"
             "**Additional Sources:**\n"
-            "• Sunlight: 10-15 minutes daily on arms/face\n"
-            "• Supplements: Consider vitamin D3 supplements\n\n"
+            "• **Sunlight:** 10-15 minutes daily on arms/face\n"
+            "• **Supplements:** Consider vitamin D3 supplements\n\n"
             "**Note:** Food sources alone may not be sufficient for low levels")
 
 def _get_vitamin_d_food_advice_general() -> str:
     """Get general vitamin D food advice."""
     return ("🐟 **Vitamin D Sources**\n\n"
             "**Food Sources:**\n"
-            "• Fatty Fish: Salmon, tuna, mackerel\n"
-            "• Egg Yolks: Especially from pasture-raised chickens\n"
-            "• Fortified Foods: Milk, cereals, plant milks\n"
-            "• Mushrooms: UV-exposed varieties\n\n"
+            "• **Fatty Fish:** Salmon, tuna, mackerel\n"
+            "• **Egg Yolks:** Especially from pasture-raised chickens\n"
+            "• **Fortified Foods:** Milk, cereals, plant milks\n"
+            "• **Mushrooms:** UV-exposed varieties\n\n"
             "**Lifestyle:**\n"
-            "• Moderate sun exposure\n"
-            "• Consider supplements if needed")
+            "• **Moderate sun exposure**\n"
+            "• **Consider supplements if needed**")
 
 def _get_glucose_food_advice_high() -> str:
     """Get food advice for high glucose."""
     return ("🥗 **Blood Sugar Management Diet**\n\n"
             "**Foods to Include:**\n"
-            "• Complex Carbs: Whole grains, legumes, vegetables\n"
-            "• Fiber: Fruits, vegetables, nuts, seeds\n"
-            "• Lean Proteins: Fish, poultry, legumes\n"
-            "• Healthy Fats: Nuts, olive oil, avocados\n\n"
+            "• **Complex Carbs:** Whole grains, legumes, vegetables\n"
+            "• **Fiber:** Fruits, vegetables, nuts, seeds\n"
+            "• **Lean Proteins:** Fish, poultry, legumes\n"
+            "• **Healthy Fats:** Nuts, olive oil, avocados\n\n"
             "**Foods to Limit:**\n"
-            "• Simple Sugars: Candy, soda, desserts\n"
-            "• Refined Carbs: White bread, pasta, rice\n"
-            "• Processed Foods: Packaged snacks, fast food\n\n"
+            "• **Simple Sugars:** Candy, soda, desserts\n"
+            "• **Refined Carbs:** White bread, pasta, rice\n"
+            "• **Processed Foods:** Packaged snacks, fast food\n\n"
             "**Lifestyle Tips:**\n"
-            "• Eat regular meals\n"
-            "• Exercise regularly\n"
-            "• Monitor blood sugar levels")
+            "• **Eat regular meals**\n"
+            "• **Exercise regularly**\n"
+            "• **Monitor blood sugar levels**")
 
 def _get_glucose_food_advice_general() -> str:
     """Get general glucose food advice."""
     return ("🥗 **Blood Sugar-Friendly Diet**\n\n"
             "**Good Choices:**\n"
-            "• Complex carbohydrates: Whole grains, legumes\n"
-            "• High-fiber foods: Fruits, vegetables, nuts\n"
-            "• Lean proteins: Fish, poultry, legumes\n"
-            "• Healthy fats: Nuts, olive oil\n\n"
+            "• **Complex carbohydrates:** Whole grains, legumes\n"
+            "• **High-fiber foods:** Fruits, vegetables, nuts\n"
+            "• **Lean proteins:** Fish, poultry, legumes\n"
+            "• **Healthy fats:** Nuts, olive oil\n\n"
             "**Limit:**\n"
-            "• Simple sugars and refined carbs\n"
-            "• Processed foods\n\n"
+            "• **Simple sugars and refined carbs**\n"
+            "• **Processed foods**\n\n"
             "**Tips:**\n"
-            "• Eat regular meals\n"
-            "• Include protein with carbs\n"
-            "• Exercise regularly")
+            "• **Eat regular meals**\n"
+            "• **Include protein with carbs**\n"
+            "• **Exercise regularly**")
 
 def _get_general_food_advice() -> str:
     """Get general healthy eating advice."""
     return ("🍎 **General Healthy Eating Guidelines**\n\n"
             "**Balanced Nutrition:**\n"
-            "• Whole Foods: Fresh fruits, vegetables, whole grains\n"
-            "• Lean Proteins: Fish, poultry, legumes, eggs\n"
-            "• Healthy Fats: Nuts, seeds, olive oil, avocados\n"
-            "• Fiber: 25-30 grams daily from various sources\n\n"
+            "• **Whole Foods:** Fresh fruits, vegetables, whole grains\n"
+            "• **Lean Proteins:** Fish, poultry, legumes, eggs\n"
+            "• **Healthy Fats:** Nuts, seeds, olive oil, avocados\n"
+            "• **Fiber:** 25-30 grams daily from various sources\n\n"
             "**Daily Recommendations:**\n"
-            "• Vegetables: 2-3 cups daily\n"
-            "• Fruits: 1-2 servings daily\n"
-            "• Proteins: Lean sources with each meal\n"
-            "• Hydration: 8-10 glasses of water daily\n\n"
+            "• **Vegetables:** 2-3 cups daily\n"
+            "• **Fruits:** 1-2 servings daily\n"
+            "• **Proteins:** Lean sources with each meal\n"
+            "• **Hydration:** 8-10 glasses of water daily\n\n"
             "**Tips:**\n"
-            "• Limit processed foods\n"
-            "• Reduce added sugars\n"
-            "• Cook at home when possible\n"
-            "• Practice portion control")
+            "• **Limit processed foods**\n"
+            "• **Reduce added sugars**\n"
+            "• **Cook at home when possible**\n"
+            "• **Practice portion control**")
 
 def _handle_symptom_question_rag(markers, prompt, medical_info, user_id):
     return _handle_symptom_question(markers or [], prompt)
@@ -1709,115 +1709,115 @@ def _get_cholesterol_testing_advice(status: str) -> str:
     if "high" in status.lower():
         return ("🩸 **Cholesterol Testing Schedule**\n\n"
                 "**For High Cholesterol:**\n"
-                "• Retest in 3-6 months after lifestyle changes\n"
-                "• Monitor other cardiovascular risk factors\n"
-                "• Consider more frequent testing if very high\n"
-                "• Your doctor may recommend medication\n\n"
+                "• **Retest in 3-6 months:** After lifestyle changes\n"
+                "• **Monitor other cardiovascular risk factors**\n"
+                "• **Consider more frequent testing:** If very high\n"
+                "• **Your doctor may recommend medication**\n\n"
                 "**What to Expect:**\n"
-                "• Lifestyle changes can improve levels\n"
-                "• Medication may be needed for very high levels\n"
-                "• Regular monitoring helps track progress")
+                "• **Lifestyle changes can improve levels**\n"
+                "• **Medication may be needed:** For very high levels\n"
+                "• **Regular monitoring helps track progress**")
     else:
         return ("🩸 **Cholesterol Testing Schedule**\n\n"
                 "**General Guidelines:**\n"
-                "• Adults: Every 4-6 years if normal\n"
-                "• More frequent if risk factors present\n"
-                "• Fasting required for accurate results\n\n"
+                "• **Adults:** Every 4-6 years if normal\n"
+                "• **More frequent if risk factors present**\n"
+                "• **Fasting required:** For accurate results\n\n"
                 "**Risk Factors for More Frequent Testing:**\n"
-                "• Family history of heart disease\n"
-                "• Diabetes or other health conditions\n"
-                "• Smoking or obesity\n"
-                "• Previous high results")
+                "• **Family history of heart disease**\n"
+                "• **Diabetes or other health conditions**\n"
+                "• **Smoking or obesity**\n"
+                "• **Previous high results**")
 
 def _get_ferritin_testing_advice(status: str) -> str:
     """Get ferritin testing advice."""
     if "low" in status.lower():
         return ("🩸 **Ferritin Testing Schedule**\n\n"
                 "**For Low Ferritin:**\n"
-                "• Retest in 3-6 months after starting treatment\n"
-                "• Monitor iron levels (serum iron, TIBC)\n"
-                "• Check for underlying causes if levels don't improve\n"
-                "• Consider additional iron studies\n\n"
+                "• **Retest in 3-6 months:** After starting treatment\n"
+                "• **Monitor iron levels:** Serum iron, TIBC\n"
+                "• **Check for underlying causes:** If levels don't improve\n"
+                "• **Consider additional iron studies**\n\n"
                 "**What to Expect:**\n"
-                "• Ferritin levels should increase with proper treatment\n"
-                "• Your doctor may also check complete blood count (CBC)\n"
-                "• Follow-up testing helps monitor treatment effectiveness")
+                "• **Ferritin levels should increase:** With proper treatment\n"
+                "• **Your doctor may also check:** Complete blood count (CBC)\n"
+                "• **Follow-up testing helps:** Monitor treatment effectiveness")
     else:
         return ("🩸 **Ferritin Testing Schedule**\n\n"
                 "**General Guidelines:**\n"
-                "• Part of routine iron studies\n"
-                "• May be checked with CBC\n"
-                "• Fasting not usually required\n\n"
+                "• **Part of routine iron studies**\n"
+                "• **May be checked with CBC**\n"
+                "• **Fasting not usually required**\n\n"
                 "**When to Test:**\n"
-                "• Symptoms of iron deficiency\n"
-                "• Routine health checkups\n"
-                "• Monitoring iron supplementation")
+                "• **Symptoms of iron deficiency**\n"
+                "• **Routine health checkups**\n"
+                "• **Monitoring iron supplementation**")
 
 def _get_vitamin_d_testing_advice(status: str) -> str:
     """Get vitamin D testing advice."""
     if "low" in status.lower():
         return ("🩸 **Vitamin D Testing Schedule**\n\n"
                 "**For Low Vitamin D:**\n"
-                "• Retest in 3-6 months after supplementation\n"
-                "• Monitor calcium levels if supplementing\n"
-                "• Check for underlying causes\n"
-                "• Seasonal testing may be recommended\n\n"
+                "• **Retest in 3-6 months:** After supplementation\n"
+                "• **Monitor calcium levels:** If supplementing\n"
+                "• **Check for underlying causes**\n"
+                "• **Seasonal testing may be recommended**\n\n"
                 "**What to Expect:**\n"
-                "• Levels should improve with supplementation\n"
-                "• Sunlight exposure affects levels\n"
-                "• Regular monitoring ensures proper dosing")
+                "• **Levels should improve:** With supplementation\n"
+                "• **Sunlight exposure affects levels**\n"
+                "• **Regular monitoring ensures:** Proper dosing")
     else:
         return ("🩸 **Vitamin D Testing Schedule**\n\n"
                 "**General Guidelines:**\n"
-                "• 25-OH Vitamin D is the standard test\n"
-                "• Fasting not required\n"
-                "• Seasonal variations are normal\n\n"
+                "• **25-OH Vitamin D:** Standard test\n"
+                "• **Fasting not required**\n"
+                "• **Seasonal variations are normal**\n\n"
                 "**When to Test:**\n"
-                "• Symptoms of deficiency\n"
-                "• Risk factors (limited sun exposure)\n"
-                "• Monitoring supplementation")
+                "• **Symptoms of deficiency**\n"
+                "• **Risk factors:** Limited sun exposure\n"
+                "• **Monitoring supplementation**")
 
 def _get_glucose_testing_advice(status: str) -> str:
     """Get glucose testing advice."""
     if "high" in status.lower():
         return ("🩸 **Blood Sugar Testing Schedule**\n\n"
                 "**For High Glucose:**\n"
-                "• More frequent monitoring may be needed\n"
-                "• Consider HbA1c testing\n"
-                "• Monitor fasting and post-meal levels\n"
-                "• Your doctor may recommend medication\n\n"
+                "• **More frequent monitoring may be needed**\n"
+                "• **Consider HbA1c testing**\n"
+                "• **Monitor fasting and post-meal levels**\n"
+                "• **Your doctor may recommend medication**\n\n"
                 "**What to Expect:**\n"
-                "• Lifestyle changes can improve levels\n"
-                "• Regular monitoring is important\n"
-                "• Medication may be needed for diabetes")
+                "• **Lifestyle changes can improve levels**\n"
+                "• **Regular monitoring is important**\n"
+                "• **Medication may be needed:** For diabetes")
     else:
         return ("🩸 **Blood Sugar Testing Schedule**\n\n"
                 "**General Guidelines:**\n"
-                "• Fasting glucose: Every 3 years if normal\n"
-                "• More frequent if risk factors present\n"
-                "• Fasting required for accurate results\n\n"
+                "• **Fasting glucose:** Every 3 years if normal\n"
+                "• **More frequent if risk factors present**\n"
+                "• **Fasting required:** For accurate results\n\n"
                 "**Risk Factors for More Frequent Testing:**\n"
-                "• Family history of diabetes\n"
-                "• Obesity or sedentary lifestyle\n"
-                "• Previous high results\n"
-                "• Age over 45")
+                "• **Family history of diabetes**\n"
+                "• **Obesity or sedentary lifestyle**\n"
+                "• **Previous high results**\n"
+                "• **Age over 45**")
 
 def _get_general_testing_advice() -> str:
     """Get general testing advice."""
     return ("🩸 **General Health Testing Guidelines**\n\n"
             "**Routine Testing:**\n"
-            "• Annual physical exam with basic labs\n"
-            "• Follow your doctor's recommended schedule\n"
-            "• More frequent testing if risk factors present\n\n"
+            "• **Annual physical exam:** With basic labs\n"
+            "• **Follow your doctor's recommended schedule**\n"
+            "• **More frequent testing:** If risk factors present\n\n"
             "**When to Test More Frequently:**\n"
-            "• Abnormal previous results\n"
-            "• New symptoms or health changes\n"
-            "• Starting new medications\n"
-            "• Family history of health conditions\n\n"
+            "• **Abnormal previous results**\n"
+            "• **New symptoms or health changes**\n"
+            "• **Starting new medications**\n"
+            "• **Family history of health conditions**\n\n"
             "**Tips:**\n"
-            "• Keep records of your test results\n"
-            "• Discuss any concerns with your doctor\n"
-            "• Follow preparation instructions (fasting, etc.)")
+            "• **Keep records of your test results**\n"
+            "• **Discuss any concerns with your doctor**\n"
+            "• **Follow preparation instructions:** Fasting, etc.")
 
 def _handle_followup_question_rag(markers, prompt, medical_info, chat_history, user_id):
     return _handle_followup_question(markers or [], prompt, chat_history)
@@ -1854,136 +1854,136 @@ def _get_cholesterol_general_info(status: str) -> str:
     if "high" in status.lower():
         return ("📊 **Cholesterol Information**\n\n"
                 "**About High Cholesterol:**\n"
-                "• High cholesterol increases heart disease risk\n"
-                "• Can be managed with lifestyle changes and medication\n"
-                "• Regular monitoring is important\n\n"
+                "• **High cholesterol increases heart disease risk**\n"
+                "• **Can be managed:** Lifestyle changes and medication\n"
+                "• **Regular monitoring is important**\n\n"
                 "**Risk Factors:**\n"
-                "• Poor diet high in saturated fats\n"
-                "• Lack of exercise\n"
-                "• Smoking and excessive alcohol\n"
-                "• Family history\n\n"
+                "• **Poor diet:** High in saturated fats\n"
+                "• **Lack of exercise**\n"
+                "• **Smoking and excessive alcohol**\n"
+                "• **Family history**\n\n"
                 "**Management:**\n"
-                "• Heart-healthy diet\n"
-                "• Regular exercise\n"
-                "• Weight management\n"
-                "• Medication if needed")
+                "• **Heart-healthy diet**\n"
+                "• **Regular exercise**\n"
+                "• **Weight management**\n"
+                "• **Medication if needed**")
     else:
         return ("📊 **Cholesterol Information**\n\n"
                 "**About Cholesterol:**\n"
-                "• Essential for cell function and hormone production\n"
-                "• Two types: HDL (good) and LDL (bad)\n"
-                "• Balanced levels are important for health\n\n"
+                "• **Essential for cell function:** And hormone production\n"
+                "• **Two types:** HDL (good) and LDL (bad)\n"
+                "• **Balanced levels are important:** For health\n\n"
                 "**Maintaining Healthy Levels:**\n"
-                "• Heart-healthy diet\n"
-                "• Regular exercise\n"
-                "• Avoid smoking\n"
-                "• Regular checkups")
+                "• **Heart-healthy diet**\n"
+                "• **Regular exercise**\n"
+                "• **Avoid smoking**\n"
+                "• **Regular checkups**")
 
 def _get_ferritin_general_info(status: str) -> str:
     """Get general ferritin information."""
     if "low" in status.lower():
         return ("📊 **Ferritin Information**\n\n"
                 "**About Low Ferritin:**\n"
-                "• Indicates iron deficiency\n"
-                "• Can cause fatigue and other symptoms\n"
-                "• Treatable with diet and supplements\n\n"
+                "• **Indicates iron deficiency**\n"
+                "• **Can cause fatigue:** And other symptoms\n"
+                "• **Treatable with diet and supplements**\n\n"
                 "**Common Causes:**\n"
-                "• Inadequate dietary iron\n"
-                "• Blood loss (menstruation, GI bleeding)\n"
-                "• Poor iron absorption\n"
-                "• Pregnancy or growth spurts\n\n"
+                "• **Inadequate dietary iron**\n"
+                "• **Blood loss:** Menstruation, GI bleeding\n"
+                "• **Poor iron absorption**\n"
+                "• **Pregnancy or growth spurts**\n\n"
                 "**Treatment:**\n"
-                "• Iron-rich diet\n"
-                "• Iron supplements\n"
-                "• Address underlying causes")
+                "• **Iron-rich diet**\n"
+                "• **Iron supplements**\n"
+                "• **Address underlying causes**")
     else:
         return ("📊 **Ferritin Information**\n\n"
                 "**About Ferritin:**\n"
-                "• Protein that stores iron in the body\n"
-                "• Important for oxygen transport\n"
-                "• Normal levels vary by age and gender\n\n"
+                "• **Protein that stores iron:** In the body\n"
+                "• **Important for oxygen transport**\n"
+                "• **Normal levels vary:** By age and gender\n\n"
                 "**Maintaining Healthy Levels:**\n"
-                "• Iron-rich diet\n"
-                "• Vitamin C to enhance absorption\n"
-                "• Regular monitoring if at risk")
+                "• **Iron-rich diet**\n"
+                "• **Vitamin C to enhance absorption**\n"
+                "• **Regular monitoring if at risk**")
 
 def _get_vitamin_d_general_info(status: str) -> str:
     """Get general vitamin D information."""
     if "low" in status.lower():
         return ("📊 **Vitamin D Information**\n\n"
                 "**About Low Vitamin D:**\n"
-                "• Common deficiency, especially in winter\n"
-                "• Important for bone health and immunity\n"
-                "• Can be corrected with supplements\n\n"
+                "• **Common deficiency:** Especially in winter\n"
+                "• **Important for bone health:** And immunity\n"
+                "• **Can be corrected with supplements**\n\n"
                 "**Common Causes:**\n"
-                "• Limited sun exposure\n"
-                "• Dark skin\n"
-                "• Obesity\n"
-                "• Certain medications\n\n"
+                "• **Limited sun exposure**\n"
+                "• **Dark skin**\n"
+                "• **Obesity**\n"
+                "• **Certain medications**\n\n"
                 "**Treatment:**\n"
-                "• Vitamin D supplements\n"
-                "• Safe sun exposure\n"
-                "• Vitamin D-rich foods")
+                "• **Vitamin D supplements**\n"
+                "• **Safe sun exposure**\n"
+                "• **Vitamin D-rich foods**")
     else:
         return ("📊 **Vitamin D Information**\n\n"
                 "**About Vitamin D:**\n"
-                "• Essential for bone health and immunity\n"
-                "• Produced by skin with sun exposure\n"
-                "• Also found in some foods\n\n"
+                "• **Essential for bone health:** And immunity\n"
+                "• **Produced by skin:** With sun exposure\n"
+                "• **Also found in some foods**\n\n"
                 "**Maintaining Healthy Levels:**\n"
-                "• Moderate sun exposure\n"
-                "• Vitamin D-rich foods\n"
-                "• Supplements if needed")
+                "• **Moderate sun exposure**\n"
+                "• **Vitamin D-rich foods**\n"
+                "• **Supplements if needed**")
 
 def _get_glucose_general_info(status: str) -> str:
     """Get general glucose information."""
     if "high" in status.lower():
         return ("📊 **Blood Sugar Information**\n\n"
                 "**About High Blood Sugar:**\n"
-                "• Can indicate prediabetes or diabetes\n"
-                "• Requires lifestyle changes and monitoring\n"
-                "• Can be managed effectively\n\n"
+                "• **Can indicate prediabetes or diabetes**\n"
+                "• **Requires lifestyle changes:** And monitoring\n"
+                "• **Can be managed effectively**\n\n"
                 "**Risk Factors:**\n"
-                "• Family history of diabetes\n"
-                "• Obesity and sedentary lifestyle\n"
-                "• Poor diet high in refined carbs\n"
-                "• Age over 45\n\n"
+                "• **Family history of diabetes**\n"
+                "• **Obesity and sedentary lifestyle**\n"
+                "• **Poor diet:** High in refined carbs\n"
+                "• **Age over 45**\n\n"
                 "**Management:**\n"
-                "• Healthy diet and exercise\n"
-                "• Weight management\n"
-                "• Regular monitoring\n"
-                "• Medication if needed")
+                "• **Healthy diet and exercise**\n"
+                "• **Weight management**\n"
+                "• **Regular monitoring**\n"
+                "• **Medication if needed**")
     else:
         return ("📊 **Blood Sugar Information**\n\n"
                 "**About Blood Sugar:**\n"
-                "• Primary energy source for cells\n"
-                "• Regulated by insulin\n"
-                "• Important for overall health\n\n"
+                "• **Primary energy source:** For cells\n"
+                "• **Regulated by insulin**\n"
+                "• **Important for overall health**\n\n"
                 "**Maintaining Healthy Levels:**\n"
-                "• Balanced diet\n"
-                "• Regular exercise\n"
-                "• Healthy weight\n"
-                "• Regular checkups")
+                "• **Balanced diet**\n"
+                "• **Regular exercise**\n"
+                "• **Healthy weight**\n"
+                "• **Regular checkups**")
 
 def _get_general_health_info() -> str:
     """Get general health information."""
     return ("🏥 **General Health Information**\n\n"
             "**Key Health Markers:**\n"
-            "• Blood pressure: Heart health indicator\n"
-            "• Cholesterol: Cardiovascular risk factor\n"
-            "• Blood sugar: Diabetes risk indicator\n"
-            "• Iron levels: Energy and oxygen transport\n"
-            "• Vitamin D: Bone health and immunity\n\n"
+            "• **Blood pressure:** Heart health indicator\n"
+            "• **Cholesterol:** Cardiovascular risk factor\n"
+            "• **Blood sugar:** Diabetes risk indicator\n"
+            "• **Iron levels:** Energy and oxygen transport\n"
+            "• **Vitamin D:** Bone health and immunity\n\n"
             "**Maintaining Good Health:**\n"
-            "• Balanced diet rich in whole foods\n"
-            "• Regular exercise (150 minutes/week)\n"
-            "• Adequate sleep (7-9 hours)\n"
-            "• Stress management\n"
-            "• Regular checkups\n\n"
+            "• **Balanced diet:** Rich in whole foods\n"
+            "• **Regular exercise:** 150 minutes/week\n"
+            "• **Adequate sleep:** 7-9 hours\n"
+            "• **Stress management**\n"
+            "• **Regular checkups**\n\n"
             "**Prevention:**\n"
-            "• Know your family history\n"
-            "• Monitor risk factors\n"
-            "• Early detection through screening")
+            "• **Know your family history**\n"
+            "• **Monitor risk factors**\n"
+            "• **Early detection through screening**")
 
 def _generate_comprehensive_marker_response_enhanced(markers: List[Dict[str, Any]], prompt: str, medical_info: Dict[str, Any], question_analysis: Dict[str, Any], user_id: str) -> str:
     """Generate comprehensive marker response with enhanced formatting."""
