@@ -17,7 +17,8 @@ requests==2.31.0
 psycopg2-binary==2.9.9
 gunicorn==21.2.0
 
-# Fix for Python 3.12 distutils issue
+# Build dependencies for Railway
 setuptools>=65.0.0
 wheel>=0.38.0
+pip>=23.0.0
 
