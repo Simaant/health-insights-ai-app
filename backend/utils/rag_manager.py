@@ -1,47 +1,69 @@
-import chromadb
 import os
 import json
 from typing import List, Dict, Any, Optional
-from sentence_transformers import SentenceTransformer
-from langchain.text_splitter import RecursiveCharacterTextSplitter
 import numpy as np
 from datetime import datetime
 import uuid
+import re
+
+# Optional imports for RAG functionality
+try:
+    import chromadb
+    from sentence_transformers import SentenceTransformer
+    from langchain.text_splitter import RecursiveCharacterTextSplitter
+    RAG_AVAILABLE = True
+except ImportError:
+    RAG_AVAILABLE = False
+    print("Warning: RAG dependencies not available. Using fallback mode.")
 
 class RAGManager:
     def __init__(self):
         """Initialize RAG manager with vector database and embedding model."""
-        # Initialize embedding model
-        self.embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
+        if not RAG_AVAILABLE:
+            # Fallback mode - use simple in-memory storage
+            self.markers_storage = {}
+            self.chat_history_storage = {}
+            self.medical_knowledge = self._initialize_medical_knowledge_fallback()
+            return
         
-        # Initialize ChromaDB
-        self.client = chromadb.PersistentClient(path="./chroma_db")
-        
-        # Create collections for different types of data
-        self.markers_collection = self.client.get_or_create_collection(
-            name="health_markers",
-            metadata={"hnsw:space": "cosine"}
-        )
-        
-        self.chat_history_collection = self.client.get_or_create_collection(
-            name="chat_history",
-            metadata={"hnsw:space": "cosine"}
-        )
-        
-        self.medical_knowledge_collection = self.client.get_or_create_collection(
-            name="medical_knowledge",
-            metadata={"hnsw:space": "cosine"}
-        )
-        
-        # Text splitter for chunking
-        self.text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=500,
-            chunk_overlap=50,
-            separators=["\n\n", "\n", ". ", " ", ""]
-        )
-        
-        # Initialize medical knowledge base
-        self._initialize_medical_knowledge()
+        try:
+            # Initialize embedding model
+            self.embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
+            
+            # Initialize ChromaDB
+            self.client = chromadb.PersistentClient(path="./chroma_db")
+            
+            # Create collections for different types of data
+            self.markers_collection = self.client.get_or_create_collection(
+                name="health_markers",
+                metadata={"hnsw:space": "cosine"}
+            )
+            
+            self.chat_history_collection = self.client.get_or_create_collection(
+                name="chat_history",
+                metadata={"hnsw:space": "cosine"}
+            )
+            
+            self.medical_knowledge_collection = self.client.get_or_create_collection(
+                name="medical_knowledge",
+                metadata={"hnsw:space": "cosine"}
+            )
+            
+            # Text splitter for chunking
+            self.text_splitter = RecursiveCharacterTextSplitter(
+                chunk_size=500,
+                chunk_overlap=50,
+                separators=["\n\n", "\n", ". ", " ", ""]
+            )
+            
+            # Initialize medical knowledge base
+            self._initialize_medical_knowledge()
+        except Exception as e:
+            print(f"RAG initialization failed: {e}")
+            # Fallback to simple storage
+            self.markers_storage = {}
+            self.chat_history_storage = {}
+            self.medical_knowledge = self._initialize_medical_knowledge_fallback()
     
     def _initialize_medical_knowledge(self):
         """Initialize the medical knowledge base with common health markers."""
@@ -118,6 +140,41 @@ class RAGManager:
         for knowledge in medical_knowledge:
             self.add_medical_knowledge(knowledge)
     
+    def _initialize_medical_knowledge_fallback(self) -> Dict[str, Any]:
+        """Initialize medical knowledge for fallback mode."""
+        return {
+            "ferritin": {
+                "description": "Ferritin is a protein that stores iron in the body. Low levels indicate iron deficiency anemia.",
+                "normal_range": "20-250 ng/mL for women, 30-400 ng/mL for men",
+                "low_symptoms": "Fatigue, weakness, shortness of breath, pale skin, dizziness",
+                "low_causes": "Iron deficiency, blood loss, poor diet, malabsorption",
+                "low_treatment": "Iron supplements, iron-rich diet, vitamin C for absorption",
+                "high_symptoms": "Joint pain, fatigue, abdominal pain, heart problems",
+                "high_causes": "Iron overload, inflammation, liver disease, hemochromatosis",
+                "high_treatment": "Phlebotomy, iron chelation therapy, dietary changes"
+            },
+            "vitamin d": {
+                "description": "Vitamin D is essential for bone health, immune function, and calcium absorption.",
+                "normal_range": "30-100 ng/mL (25-OH Vitamin D)",
+                "low_symptoms": "Bone pain, muscle weakness, fatigue, frequent infections",
+                "low_causes": "Limited sun exposure, poor diet, malabsorption, obesity",
+                "low_treatment": "Vitamin D supplements, sun exposure, fortified foods",
+                "high_symptoms": "Nausea, vomiting, kidney problems, calcium buildup",
+                "high_causes": "Excessive supplementation, hyperparathyroidism",
+                "high_treatment": "Reduce supplementation, monitor calcium levels"
+            },
+            "vitamin b12": {
+                "description": "Vitamin B12 is essential for nerve function, red blood cell formation, and DNA synthesis.",
+                "normal_range": "200-900 pg/mL",
+                "low_symptoms": "Fatigue, numbness, tingling, memory problems, anemia",
+                "low_causes": "Pernicious anemia, vegan diet, malabsorption, medications",
+                "low_treatment": "B12 injections, oral supplements, dietary changes",
+                "high_symptoms": "Usually asymptomatic, may indicate underlying condition",
+                "high_causes": "Liver disease, certain cancers, supplementation",
+                "high_treatment": "Address underlying cause, monitor levels"
+            }
+        }
+    
     def add_medical_knowledge(self, knowledge: Dict[str, Any]):
         """Add medical knowledge to the vector database."""
         content = f"""
@@ -147,6 +204,13 @@ class RAGManager:
     
     def index_user_markers(self, user_id: str, markers: List[Dict[str, Any]], source: str = "manual"):
         """Index user's health markers for retrieval."""
+        if not RAG_AVAILABLE or not hasattr(self, 'markers_collection'):
+            # Fallback mode
+            if user_id not in self.markers_storage:
+                self.markers_storage[user_id] = []
+            self.markers_storage[user_id].extend(markers)
+            return
+        
         for marker in markers:
             content = f"""
             User Marker: {marker.get('name', 'Unknown')}
@@ -195,6 +259,10 @@ class RAGManager:
     
     def retrieve_relevant_context(self, user_id: str, query: str, top_k: int = 5) -> Dict[str, Any]:
         """Retrieve relevant context for a user query using semantic search."""
+        if not RAG_AVAILABLE or not hasattr(self, 'markers_collection'):
+            # Fallback mode - simple keyword matching
+            return self._retrieve_context_fallback(user_id, query)
+        
         # Get user's markers
         user_markers = self.markers_collection.query(
             query_texts=[query],
@@ -223,6 +291,33 @@ class RAGManager:
         }
         
         return all_results
+    
+    def _retrieve_context_fallback(self, user_id: str, query: str) -> Dict[str, Any]:
+        """Fallback context retrieval using simple keyword matching."""
+        query_lower = query.lower()
+        
+        # Get user's markers
+        user_markers = []
+        if user_id in self.markers_storage:
+            for marker in self.markers_storage[user_id]:
+                marker_name = marker.get('name', '').lower()
+                if marker_name in query_lower or any(word in query_lower for word in marker_name.split()):
+                    user_markers.append(marker)
+        
+        # Get relevant medical knowledge
+        medical_knowledge = []
+        for marker_name, knowledge in self.medical_knowledge.items():
+            if marker_name.lower() in query_lower:
+                medical_knowledge.append({
+                    "marker": marker_name,
+                    "content": str(knowledge)
+                })
+        
+        return {
+            "user_markers": {"documents": [str(m) for m in user_markers], "metadatas": [{"marker_name": m.get('name', '')} for m in user_markers]},
+            "medical_knowledge": {"documents": [k["content"] for k in medical_knowledge], "metadatas": [{"marker": k["marker"]} for k in medical_knowledge]},
+            "chat_history": {"documents": [], "metadatas": []}
+        }
     
     def get_marker_context(self, user_id: str, marker_name: str) -> Dict[str, Any]:
         """Get specific context for a particular marker."""
