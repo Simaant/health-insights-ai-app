@@ -17,7 +17,7 @@ load_dotenv()
 # Security configuration
 SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-change-in-production")
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+ACCESS_TOKEN_EXPIRE_MINUTES = 1440  # 24 hours instead of 30 minutes
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 _security = HTTPBearer(auto_error=False)

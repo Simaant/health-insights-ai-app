@@ -21,13 +21,13 @@ def run_agent(prompt: str, markers: Optional[List[Dict[str, Any]]] = None, chat_
     # Normalize the prompt
     prompt_lower = prompt.lower().strip()
     
+    # If we have markers, provide context-aware responses FIRST
+    if markers and len(markers) > 0:
+        return _generate_intelligent_response(markers, prompt, chat_history)
+    
     # Check if this is a general health question that doesn't relate to uploaded markers
     if _is_general_health_question(prompt_lower):
         return _handle_general_health_questions(prompt, chat_history)
-    
-    # If we have markers, provide context-aware responses
-    if markers and len(markers) > 0:
-        return _generate_intelligent_response(markers, prompt, chat_history)
     
     # Handle general health questions without specific marker data
     return _handle_general_health_questions(prompt, chat_history)
@@ -107,7 +107,8 @@ def _is_food_question(prompt: str) -> bool:
     """Check if user is asking about diet/food recommendations."""
     food_keywords = [
         "food", "diet", "eat", "nutrition", "meal", "supplement", "vitamin",
-        "what to eat", "foods to", "dietary", "nutritional"
+        "what to eat", "foods to", "dietary", "nutritional", "foods", "vitamin c", 
+        "vitamin d", "iron", "ferritin", "supplements", "dietary", "include", "add"
     ]
     return any(keyword in prompt for keyword in food_keywords)
 
@@ -161,9 +162,13 @@ def _is_doctor_question(prompt: str) -> bool:
     return any(keyword in prompt for keyword in doctor_keywords)
 
 def _handle_followup_question(markers: List[Dict[str, Any]], user_prompt: str, chat_history: Optional[List[Dict[str, str]]] = None) -> str:
-    """Handle follow-up questions with context awareness."""
+    """Handle follow-up questions with context awareness using chat history."""
     prompt_lower = user_prompt.lower()
     
+    # Analyze chat history to understand context
+    context = _analyze_chat_context(chat_history, markers)
+    
+    # Check for specific follow-up patterns
     if "what about" in prompt_lower or "how about" in prompt_lower:
         # Extract the specific topic they're asking about
         if "ferritin" in prompt_lower or "iron" in prompt_lower:
@@ -184,7 +189,84 @@ def _handle_followup_question(markers: List[Dict[str, Any]], user_prompt: str, c
     if "how serious" in prompt_lower or "is this serious" in prompt_lower:
         return _assess_severity(markers, user_prompt)
     
+    # Use context from previous messages to provide better responses
+    if context.get("previous_topic") == "ferritin" and ("food" in prompt_lower or "vitamin c" in prompt_lower):
+        return _handle_food_question(markers, user_prompt)
+    
+    if context.get("previous_topic") == "diet" and ("supplement" in prompt_lower or "vitamin" in prompt_lower):
+        return _handle_supplement_question(markers, user_prompt)
+    
     return _generate_comprehensive_marker_response(markers, user_prompt)
+
+def _analyze_chat_context(chat_history: Optional[List[Dict[str, str]]], markers: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """Analyze chat history to understand conversation context."""
+    if not chat_history:
+        return {}
+    
+    context = {
+        "previous_topic": None,
+        "mentioned_markers": [],
+        "discussed_issues": []
+    }
+    
+    # Look at last few messages for context
+    recent_messages = chat_history[-3:] if len(chat_history) >= 3 else chat_history
+    
+    for message in recent_messages:
+        content = message.get("content", "").lower()
+        
+        # Check for marker mentions
+        for marker in markers:
+            marker_name = marker.get("name", "").lower()
+            if marker_name in content:
+                context["mentioned_markers"].append(marker_name)
+        
+        # Check for topic mentions
+        if any(word in content for word in ["ferritin", "iron", "anemia"]):
+            context["previous_topic"] = "ferritin"
+        elif any(word in content for word in ["food", "diet", "nutrition", "eat"]):
+            context["previous_topic"] = "diet"
+        elif any(word in content for word in ["supplement", "vitamin", "pill"]):
+            context["previous_topic"] = "supplements"
+        elif any(word in content for word in ["symptom", "feel", "experience"]):
+            context["previous_topic"] = "symptoms"
+    
+    return context
+
+def _handle_supplement_question(markers: List[Dict[str, Any]], user_prompt: str) -> str:
+    """Handle supplement-related questions."""
+    prompt_lower = user_prompt.lower()
+    
+    # Check for specific deficiencies
+    iron_deficient = any(m.get("name", "").lower() in ["ferritin", "iron"] and m.get("status") == "low" for m in markers)
+    vitamin_d_deficient = any(m.get("name", "").lower() in ["vitamin d", "25-oh vitamin d"] and m.get("status") in ["low", "deficient"] for m in markers)
+    
+    if iron_deficient:
+        return ("## 💊 Iron Supplement Recommendations\n\n"
+                "**For Low Ferritin Levels:**\n"
+                "• **Iron Supplements:** Ferrous sulfate, ferrous gluconate, or ferrous fumarate\n"
+                "• **Dosage:** 30-60mg elemental iron daily (consult your doctor)\n"
+                "• **Timing:** Take on empty stomach for best absorption\n"
+                "• **With Vitamin C:** Take with orange juice or vitamin C supplement\n"
+                "• **Avoid:** Coffee, tea, calcium supplements within 2 hours\n\n"
+                "**Important:** Always consult your healthcare provider before starting supplements.")
+    
+    if vitamin_d_deficient:
+        return ("## 💊 Vitamin D Supplement Recommendations\n\n"
+                "**For Low Vitamin D Levels:**\n"
+                "• **Vitamin D3:** Preferred form for supplementation\n"
+                "• **Dosage:** 1000-4000 IU daily (consult your doctor)\n"
+                "• **Timing:** Take with fatty foods for better absorption\n"
+                "• **Monitor:** Retest levels after 3-6 months\n\n"
+                "**Important:** Always consult your healthcare provider before starting supplements.")
+    
+    return ("## 💊 General Supplement Guidelines\n\n"
+            "**Before Taking Supplements:**\n"
+            "• **Consult Your Doctor:** Always get medical advice first\n"
+            "• **Get Tested:** Know your current levels before supplementing\n"
+            "• **Quality Matters:** Choose reputable brands\n"
+            "• **Monitor Progress:** Retest levels periodically\n\n"
+            "**Remember:** Supplements are not a substitute for a balanced diet.")
 
 def _handle_specific_marker_question(markers: List[Dict[str, Any]], user_prompt: str) -> str:
     """Handle questions about ANY specific marker - completely generalized."""
@@ -257,40 +339,82 @@ def _handle_treatment_question(markers: List[Dict[str, Any]], user_prompt: str) 
             "**Important:** Always consult your healthcare provider for personalized treatment plans.")
 
 def _handle_food_question(markers: List[Dict[str, Any]], user_prompt: str) -> str:
-    """Handle diet and nutrition questions."""
+    """Handle diet and nutrition questions with personalized recommendations based on user's markers."""
     prompt_lower = user_prompt.lower()
     abnormal_markers = [m for m in markers if m.get("status") != "normal"]
     
+    # Check for specific nutrient deficiencies
+    iron_deficient = any(m.get("name", "").lower() in ["ferritin", "iron"] and m.get("status") == "low" for m in markers)
+    vitamin_d_deficient = any(m.get("name", "").lower() in ["vitamin d", "25-oh vitamin d"] and m.get("status") in ["low", "deficient"] for m in markers)
+    vitamin_b12_deficient = any(m.get("name", "").lower() in ["vitamin b12", "b12"] and m.get("status") in ["low", "deficient"] for m in markers)
+    vitamin_c_mentioned = "vitamin c" in prompt_lower or "vit c" in prompt_lower
+    
+    # Build personalized recommendations
+    recommendations = []
+    
+    if iron_deficient:
+        recommendations.append("## 🥩 Iron-Rich Foods for Low Ferritin\n\n"
+                              "**High-Iron Foods:**\n"
+                              "• **Red Meat:** Lean beef, lamb, and pork\n"
+                              "• **Poultry:** Chicken and turkey (dark meat)\n"
+                              "• **Fish:** Tuna, salmon, and sardines\n"
+                              "• **Legumes:** Beans, lentils, and chickpeas\n"
+                              "• **Dark Leafy Greens:** Spinach, kale, and Swiss chard\n"
+                              "• **Fortified Foods:** Cereals, breads, and pasta\n\n"
+                              "**Enhance Iron Absorption:**\n"
+                              "• **Vitamin C Foods:** Citrus fruits, bell peppers, tomatoes\n"
+                              "• **Avoid with Coffee/Tea:** Wait 1-2 hours after meals\n"
+                              "• **Cook in Cast Iron:** Can increase iron content\n\n"
+                              "**Recommended Daily Intake:** 18mg for women, 8mg for men")
+    
+    if vitamin_c_mentioned and iron_deficient:
+        recommendations.append("## 🍊 Vitamin C Foods for Iron Absorption\n\n"
+                              "**Best Vitamin C Sources:**\n"
+                              "• **Citrus Fruits:** Oranges, grapefruits, lemons, limes\n"
+                              "• **Bell Peppers:** Red, yellow, and green peppers\n"
+                              "• **Berries:** Strawberries, raspberries, blueberries\n"
+                              "• **Tropical Fruits:** Kiwi, pineapple, mango\n"
+                              "• **Vegetables:** Broccoli, Brussels sprouts, tomatoes\n"
+                              "• **Leafy Greens:** Spinach, kale, and mustard greens\n\n"
+                              "**Pro Tip:** Eat vitamin C foods with iron-rich meals to boost absorption by up to 3x!")
+    
+    if vitamin_d_deficient:
+        recommendations.append("## 🐟 Vitamin D Sources\n\n"
+                              "**Food Sources:**\n"
+                              "• **Fatty Fish:** Salmon, tuna, mackerel, sardines\n"
+                              "• **Egg Yolks:** From pasture-raised chickens\n"
+                              "• **Fortified Dairy:** Milk, yogurt, and cheese\n"
+                              "• **Mushrooms:** Exposed to UV light\n"
+                              "• **Fortified Plant Milk:** Almond, soy, oat milk\n\n"
+                              "**Sunlight:** 10-15 minutes daily on arms/face")
+    
+    if vitamin_b12_deficient:
+        recommendations.append("## 🥩 Vitamin B12 Sources\n\n"
+                              "**Animal Sources:**\n"
+                              "• **Meat:** Beef, pork, lamb, and poultry\n"
+                              "• **Fish:** Salmon, tuna, trout, and sardines\n"
+                              "• **Eggs:** Especially the yolks\n"
+                              "• **Dairy:** Milk, cheese, and yogurt\n\n"
+                              "**Fortified Sources:**\n"
+                              "• **Plant Milks:** Almond, soy, oat milk\n"
+                              "• **Cereals:** Fortified breakfast cereals\n"
+                              "• **Nutritional Yeast:** Great for vegetarians")
+    
+    # If we have specific recommendations, return them
+    if recommendations:
+        return "\n\n".join(recommendations)
+    
+    # General dietary advice if no specific deficiencies
     if not abnormal_markers:
-        return "Since all your markers are normal, maintain a balanced diet with plenty of fruits, vegetables, lean proteins, and whole grains."
+        return "## ✅ All Markers Normal\n\nSince all your markers are normal, maintain a balanced diet with plenty of fruits, vegetables, lean proteins, and whole grains."
     
-    # Focus on the specific marker mentioned or the most relevant one
-    if len(abnormal_markers) == 1:
-        marker = abnormal_markers[0]
-        name = marker.get("name", "")
-        status = marker.get("status", "")
-        
-        if name == "FERRITIN" and status == "low":
-            return ("**For low ferritin:**\n"
-                   "• **Iron-rich foods:** Red meat, spinach, beans, lentils, fortified cereals\n"
-                   "• **Enhance absorption:** Include vitamin C-rich foods (citrus, bell peppers)\n"
-                   "• **Avoid with meals:** Coffee, tea, calcium supplements\n"
-                   "• **Consider:** Iron supplements under medical supervision")
-        
-        elif name in ["LDL", "Total Cholesterol"] and status == "high":
-            return ("**For high cholesterol:**\n"
-                   "• **Reduce:** Saturated fats, trans fats, processed foods\n"
-                   "• **Increase:** Fiber (oats, fruits, vegetables), omega-3 fatty acids\n"
-                   "• **Choose:** Lean proteins, whole grains, healthy fats (olive oil, nuts)")
-    
-    # Multiple markers - give focused advice
-    return ("## 🍎 Dietary Recommendations\n\n"
-            "**General Guidelines:**\n"
+    return ("## 🍎 General Dietary Recommendations\n\n"
+            "**Balanced Nutrition Guidelines:**\n"
             "• **Whole Foods:** Focus on fresh fruits, vegetables, whole grains, and lean proteins\n"
             "• **Reduce Processed Foods:** Limit packaged foods, added sugars, and refined carbohydrates\n"
             "• **Healthy Fats:** Include nuts, seeds, olive oil, and fatty fish\n"
             "• **Fiber:** Aim for 25-30 grams of fiber daily from fruits, vegetables, and whole grains\n\n"
-            "**Specific Recommendations:**\n"
+            "**Daily Recommendations:**\n"
             "• **Proteins:** Lean meats, fish, eggs, legumes, and plant-based proteins\n"
             "• **Vegetables:** Aim for 2-3 cups daily, including leafy greens\n"
             "• **Fruits:** 1-2 servings daily, focusing on low-sugar options\n"
