@@ -416,29 +416,29 @@ def _handle_food_question(markers: List[Dict[str, Any]], user_prompt: str) -> st
     recommendations = []
     
     if iron_deficient:
-        recommendations.append("## 🥩 Iron-Rich Foods for Low Ferritin\n\n"
+        recommendations.append("🥩 **Iron-Rich Foods for Low Ferritin**\n\n"
                               "**High-Iron Foods:**\n"
-                              "• **Red Meat:** Lean beef, lamb, and pork\n"
-                              "• **Poultry:** Chicken and turkey (dark meat)\n"
-                              "• **Fish:** Tuna, salmon, and sardines\n"
-                              "• **Legumes:** Beans, lentils, and chickpeas\n"
-                              "• **Dark Leafy Greens:** Spinach, kale, and Swiss chard\n"
-                              "• **Fortified Foods:** Cereals, breads, and pasta\n\n"
+                              "• Red Meat: Lean beef, lamb, and pork\n"
+                              "• Poultry: Chicken and turkey (dark meat)\n"
+                              "• Fish: Tuna, salmon, and sardines\n"
+                              "• Legumes: Beans, lentils, and chickpeas\n"
+                              "• Dark Leafy Greens: Spinach, kale, and Swiss chard\n"
+                              "• Fortified Foods: Cereals, breads, and pasta\n\n"
                               "**Enhance Iron Absorption:**\n"
-                              "• **Vitamin C Foods:** Citrus fruits, bell peppers, tomatoes\n"
-                              "• **Avoid with Coffee/Tea:** Wait 1-2 hours after meals\n"
-                              "• **Cook in Cast Iron:** Can increase iron content\n\n"
+                              "• Vitamin C Foods: Citrus fruits, bell peppers, tomatoes\n"
+                              "• Avoid with Coffee/Tea: Wait 1-2 hours after meals\n"
+                              "• Cook in Cast Iron: Can increase iron content\n\n"
                               "**Recommended Daily Intake:** 18mg for women, 8mg for men")
     
     if vitamin_c_mentioned and iron_deficient:
-        recommendations.append("## 🍊 Vitamin C Foods for Iron Absorption\n\n"
+        recommendations.append("🍊 **Vitamin C Foods for Iron Absorption**\n\n"
                               "**Best Vitamin C Sources:**\n"
-                              "• **Citrus Fruits:** Oranges, grapefruits, lemons, limes\n"
-                              "• **Bell Peppers:** Red, yellow, and green peppers\n"
-                              "• **Berries:** Strawberries, raspberries, blueberries\n"
-                              "• **Tropical Fruits:** Kiwi, pineapple, mango\n"
-                              "• **Vegetables:** Broccoli, Brussels sprouts, tomatoes\n"
-                              "• **Leafy Greens:** Spinach, kale, and mustard greens\n\n"
+                              "• Citrus Fruits: Oranges, grapefruits, lemons, limes\n"
+                              "• Bell Peppers: Red, yellow, and green peppers\n"
+                              "• Berries: Strawberries, raspberries, blueberries\n"
+                              "• Tropical Fruits: Kiwi, pineapple, mango\n"
+                              "• Vegetables: Broccoli, Brussels sprouts, tomatoes\n"
+                              "• Leafy Greens: Spinach, kale, and mustard greens\n\n"
                               "**Pro Tip:** Eat vitamin C foods with iron-rich meals to boost absorption by up to 3x!")
     
     if vitamin_d_deficient:
@@ -471,17 +471,17 @@ def _handle_food_question(markers: List[Dict[str, Any]], user_prompt: str) -> st
     if not abnormal_markers:
         return "## ✅ All Markers Normal\n\nSince all your markers are normal, maintain a balanced diet with plenty of fruits, vegetables, lean proteins, and whole grains."
     
-    return ("## 🍎 General Dietary Recommendations\n\n"
+    return ("🍎 **General Dietary Recommendations**\n\n"
             "**Balanced Nutrition Guidelines:**\n"
-            "• **Whole Foods:** Focus on fresh fruits, vegetables, whole grains, and lean proteins\n"
-            "• **Reduce Processed Foods:** Limit packaged foods, added sugars, and refined carbohydrates\n"
-            "• **Healthy Fats:** Include nuts, seeds, olive oil, and fatty fish\n"
-            "• **Fiber:** Aim for 25-30 grams of fiber daily from fruits, vegetables, and whole grains\n\n"
+            "• Whole Foods: Focus on fresh fruits, vegetables, whole grains, and lean proteins\n"
+            "• Reduce Processed Foods: Limit packaged foods, added sugars, and refined carbohydrates\n"
+            "• Healthy Fats: Include nuts, seeds, olive oil, and fatty fish\n"
+            "• Fiber: Aim for 25-30 grams of fiber daily from fruits, vegetables, and whole grains\n\n"
             "**Daily Recommendations:**\n"
-            "• **Proteins:** Lean meats, fish, eggs, legumes, and plant-based proteins\n"
-            "• **Vegetables:** Aim for 2-3 cups daily, including leafy greens\n"
-            "• **Fruits:** 1-2 servings daily, focusing on low-sugar options\n"
-            "• **Hydration:** Drink 8-10 glasses of water daily\n\n"
+            "• Proteins: Lean meats, fish, eggs, legumes, and plant-based proteins\n"
+            "• Vegetables: Aim for 2-3 cups daily, including leafy greens\n"
+            "• Fruits: 1-2 servings daily, focusing on low-sugar options\n"
+            "• Hydration: Drink 8-10 glasses of water daily\n\n"
             "**Next Steps:**\n"
             "Consider consulting a registered dietitian for personalized meal planning and guidance.")
 
@@ -529,10 +529,15 @@ def _handle_testing_question(markers: List[Dict[str, Any]], user_prompt: str) ->
         status = marker.get("status", "")
         
         if name == "FERRITIN" and status == "low":
-            return ("**Ferritin testing:**\n"
+            return ("🩸 **Ferritin Testing Schedule**\n\n"
+                   "**Recommended Testing:**\n"
                    "• Retest in 3-6 months after starting treatment\n"
                    "• Monitor iron levels (serum iron, TIBC)\n"
-                   "• Check for underlying causes if levels don't improve")
+                   "• Check for underlying causes if levels don't improve\n\n"
+                   "**What to Expect:**\n"
+                   "• Ferritin levels should increase with proper treatment\n"
+                   "• Your doctor may also check complete blood count (CBC)\n"
+                   "• Follow-up testing helps monitor treatment effectiveness")
         
         elif name in ["LDL", "Total Cholesterol"] and status == "high":
             return ("**Cholesterol testing:**\n"
@@ -1267,36 +1272,36 @@ def _get_marker_specific_response_rag(marker: Dict[str, Any], prompt: str, medic
     medical_knowledge = medical_info.get(name.lower(), [])
     
     response_parts = []
-    response_parts.append(f"## 📊 {name} Analysis")
+    response_parts.append(f"📊 **{name} Analysis**")
     response_parts.append("")
     response_parts.append("**Your Results:**")
-    response_parts.append(f"• **Value:** {value}")
-    response_parts.append(f"• **Status:** {status.upper()}")
+    response_parts.append(f"• Value: {value}")
+    response_parts.append(f"• Status: {status.upper()}")
     
     # Add medical knowledge if available
     if medical_knowledge:
         response_parts.append("")
-        response_parts.append("## 📋 Medical Information")
+        response_parts.append("📋 **Medical Information**")
         for knowledge in medical_knowledge[:2]:  # Limit to 2 most relevant pieces
             response_parts.append(knowledge)
     
     # Add personalized recommendations
     if status != "normal":
         response_parts.append("")
-        response_parts.append("## 💡 Personalized Recommendations")
+        response_parts.append("💡 **Personalized Recommendations**")
         response_parts.append("Based on your results, consider:")
         
         if "low" in status.lower():
-            response_parts.append("• **Dietary Changes:** Focus on foods rich in this nutrient")
-            response_parts.append("• **Supplements:** Consider supplementation under medical supervision")
-            response_parts.append("• **Lifestyle:** Address underlying causes")
+            response_parts.append("• Dietary Changes: Focus on foods rich in this nutrient")
+            response_parts.append("• Supplements: Consider supplementation under medical supervision")
+            response_parts.append("• Lifestyle: Address underlying causes")
         elif "high" in status.lower():
-            response_parts.append("• **Medical Evaluation:** Consult your healthcare provider")
-            response_parts.append("• **Monitoring:** Regular follow-up testing")
-            response_parts.append("• **Lifestyle:** Address contributing factors")
+            response_parts.append("• Medical Evaluation: Consult your healthcare provider")
+            response_parts.append("• Monitoring: Regular follow-up testing")
+            response_parts.append("• Lifestyle: Address contributing factors")
     
     response_parts.append("")
-    response_parts.append("## 🎯 Next Steps")
+    response_parts.append("🎯 **Next Steps**")
     response_parts.append("Discuss these results with your healthcare provider for personalized guidance.")
     
     return "\n".join(response_parts)
@@ -1329,32 +1334,32 @@ def _generate_comprehensive_marker_response_rag(markers: Optional[List[Dict[str,
                 "**Keep up the good work:** Continue maintaining your healthy lifestyle!")
     
     response_parts = []
-    response_parts.append(f"## 📊 Health Markers Summary")
-    response_parts.append(f"**Analysis of {len(markers)} Health Markers**")
+    response_parts.append(f"📊 **Health Markers Summary**")
+    response_parts.append(f"Analysis of {len(markers)} Health Markers")
     response_parts.append("")
     
     if abnormal_markers:
-        response_parts.append(f"## ⚠️ Abnormal Markers ({len(abnormal_markers)})")
+        response_parts.append(f"⚠️ **Abnormal Markers ({len(abnormal_markers)})**")
         for marker in abnormal_markers:
             name = marker.get("name", "")
             value = marker.get("value", "")
             status = marker.get("status", "")
-            response_parts.append(f"• **{name}:** {value} ({status.upper()})")
+            response_parts.append(f"• {name}: {value} ({status.upper()})")
         response_parts.append("")
     
     if normal_markers:
-        response_parts.append(f"## ✅ Normal Markers ({len(normal_markers)})")
+        response_parts.append(f"✅ **Normal Markers ({len(normal_markers)})**")
         for marker in normal_markers:
             name = marker.get("name", "")
             value = marker.get("value", "")
-            response_parts.append(f"• **{name}:** {value}")
+            response_parts.append(f"• {name}: {value}")
         response_parts.append("")
     
-    response_parts.append("## 💡 Recommendations")
-    response_parts.append("• **Prioritize Abnormal Markers:** Focus on addressing the concerning results first")
-    response_parts.append("• **Lifestyle Changes:** Implement diet and exercise modifications")
-    response_parts.append("• **Medical Consultation:** Consider consulting your healthcare provider")
-    response_parts.append("• **Follow-up Testing:** Schedule repeat testing as recommended")
+    response_parts.append("💡 **Recommendations**")
+    response_parts.append("• Prioritize Abnormal Markers: Focus on addressing the concerning results first")
+    response_parts.append("• Lifestyle Changes: Implement diet and exercise modifications")
+    response_parts.append("• Medical Consultation: Consider consulting your healthcare provider")
+    response_parts.append("• Follow-up Testing: Schedule repeat testing as recommended")
     response_parts.append("")
     response_parts.append("**Next Steps:** Discuss these results with your healthcare provider for personalized guidance.")
     

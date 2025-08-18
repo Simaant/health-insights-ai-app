@@ -296,18 +296,24 @@ class RAGManager:
         """Fallback context retrieval using simple keyword matching."""
         query_lower = query.lower()
         
-        # Get user's markers
+        # Get user's markers with better matching
         user_markers = []
         if user_id in self.markers_storage:
             for marker in self.markers_storage[user_id]:
                 marker_name = marker.get('name', '').lower()
-                if marker_name in query_lower or any(word in query_lower for word in marker_name.split()):
+                marker_words = marker_name.split()
+                
+                # Check for exact match or partial matches
+                if (marker_name in query_lower or 
+                    any(word in query_lower for word in marker_words if len(word) > 2) or
+                    any(synonym in query_lower for synonym in self._get_marker_synonyms(marker_name))):
                     user_markers.append(marker)
         
-        # Get relevant medical knowledge
+        # Get relevant medical knowledge with better matching
         medical_knowledge = []
         for marker_name, knowledge in self.medical_knowledge.items():
-            if marker_name.lower() in query_lower:
+            if (marker_name.lower() in query_lower or 
+                any(synonym in query_lower for synonym in self._get_marker_synonyms(marker_name))):
                 medical_knowledge.append({
                     "marker": marker_name,
                     "content": str(knowledge)
@@ -318,6 +324,22 @@ class RAGManager:
             "medical_knowledge": {"documents": [k["content"] for k in medical_knowledge], "metadatas": [{"marker": k["marker"]} for k in medical_knowledge]},
             "chat_history": {"documents": [], "metadatas": []}
         }
+    
+    def _get_marker_synonyms(self, marker_name: str) -> List[str]:
+        """Get synonyms for common medical markers."""
+        synonyms = {
+            "ferritin": ["iron", "iron stores", "iron level", "iron deficiency"],
+            "vitamin d": ["vit d", "25-oh vitamin d", "25-hydroxyvitamin d", "vitamin d3"],
+            "vitamin b12": ["b12", "cobalamin", "vitamin b-12"],
+            "cholesterol": ["total cholesterol", "hdl", "ldl", "lipids"],
+            "glucose": ["blood sugar", "blood glucose", "sugar"],
+            "tsh": ["thyroid stimulating hormone", "thyroid", "thyroid function"],
+            "hemoglobin": ["hgb", "hb", "red blood cells"],
+            "creatinine": ["kidney function", "renal function", "kidney"],
+            "alt": ["alanine aminotransferase", "liver function", "liver"],
+            "ast": ["aspartate aminotransferase", "liver function", "liver"]
+        }
+        return synonyms.get(marker_name.lower(), [])
     
     def get_marker_context(self, user_id: str, marker_name: str) -> Dict[str, Any]:
         """Get specific context for a particular marker."""
