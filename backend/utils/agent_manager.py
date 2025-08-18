@@ -2,6 +2,7 @@
 import os
 import re
 from typing import Optional, List, Dict, Any
+from .rag_manager import rag_manager
 
 # Optional lazy initialization to avoid model download during import time in tests
 _model = None
@@ -14,12 +15,33 @@ def _get_model():
         _model = "simple_text_generator"
     return _model
 
-def run_agent(prompt: str, markers: Optional[List[Dict[str, Any]]] = None, chat_history: Optional[List[Dict[str, str]]] = None) -> str:
+def run_agent(prompt: str, markers: Optional[List[Dict[str, Any]]] = None, chat_history: Optional[List[Dict[str, str]]] = None, user_id: Optional[str] = None) -> str:
     """
-    Enhanced intelligent AI agent that understands context and provides personalized responses.
+    Enhanced intelligent AI agent with RAG capabilities that understands context and provides personalized responses.
     """
     # Normalize the prompt
     prompt_lower = prompt.lower().strip()
+    
+    # Use RAG to retrieve relevant context if user_id is provided
+    if user_id:
+        try:
+            # Index current markers and chat history for future retrieval
+            if markers:
+                rag_manager.index_user_markers(user_id, markers, "manual")
+            
+            if chat_history:
+                rag_manager.index_chat_history(user_id, chat_history)
+            
+            # Retrieve relevant context using RAG
+            context = rag_manager.retrieve_relevant_context(user_id, prompt)
+            
+            # Generate response using RAG-enhanced context
+            return _generate_rag_enhanced_response(prompt, markers, chat_history, context, user_id)
+            
+        except Exception as e:
+            print(f"RAG error: {e}")
+            # Fallback to original method if RAG fails
+            pass
     
     # If we have markers, provide context-aware responses FIRST
     if markers and len(markers) > 0:
@@ -31,6 +53,47 @@ def run_agent(prompt: str, markers: Optional[List[Dict[str, Any]]] = None, chat_
     
     # Handle general health questions without specific marker data
     return _handle_general_health_questions(prompt, chat_history)
+
+def _generate_rag_enhanced_response(prompt: str, markers: Optional[List[Dict[str, Any]]], chat_history: Optional[List[Dict[str, str]]], context: Dict[str, Any], user_id: str) -> str:
+    """Generate RAG-enhanced responses using retrieved context."""
+    prompt_lower = prompt.lower()
+    
+    # Extract relevant information from RAG context
+    user_markers = context.get("user_markers", {})
+    medical_knowledge = context.get("medical_knowledge", {})
+    chat_context = context.get("chat_history", {})
+    
+    # Get user's markers from RAG if not provided directly
+    if not markers and user_markers.get("documents"):
+        markers = _extract_markers_from_rag(user_markers)
+    
+    # Get medical knowledge for relevant markers
+    medical_info = _extract_medical_knowledge(medical_knowledge)
+    
+    # Check for specific question types with RAG context
+    if _is_doctor_question(prompt_lower):
+        return _handle_doctor_question_rag(markers, prompt, medical_info, user_id)
+    
+    if _is_treatment_question(prompt_lower):
+        return _handle_treatment_question_rag(markers, prompt, medical_info, user_id)
+    
+    if _is_food_question(prompt_lower):
+        return _handle_food_question_rag(markers, prompt, medical_info, user_id)
+    
+    if _is_symptom_question(prompt_lower):
+        return _handle_symptom_question_rag(markers, prompt, medical_info, user_id)
+    
+    if _is_testing_question(prompt_lower):
+        return _handle_testing_question_rag(markers, prompt, medical_info, user_id)
+    
+    if _is_specific_marker_question(prompt_lower, markers or []):
+        return _handle_specific_marker_question_rag(markers, prompt, medical_info, user_id)
+    
+    if _is_followup_question(prompt_lower, chat_history):
+        return _handle_followup_question_rag(markers, prompt, medical_info, chat_history, user_id)
+    
+    # Default comprehensive response with RAG
+    return _generate_comprehensive_marker_response_rag(markers, prompt, medical_info, user_id)
 
 def _generate_intelligent_response(markers: List[Dict[str, Any]], user_prompt: str, chat_history: Optional[List[Dict[str, str]]] = None) -> str:
     """Generate intelligent, context-aware responses based on user's health markers."""
@@ -1093,3 +1156,225 @@ def analyze_health_trends(markers_history: List[List[Dict[str, Any]]]) -> str:
         "I would need to compare specific markers over time. Consider discussing "
         "trends with your healthcare provider who can access your complete medical history."
     )
+
+# RAG Helper Functions
+def _extract_markers_from_rag(user_markers: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """Extract marker information from RAG results."""
+    markers = []
+    if not user_markers.get("documents"):
+        return markers
+    
+    for i, doc in enumerate(user_markers["documents"]):
+        metadata = user_markers["metadatas"][i] if i < len(user_markers["metadatas"]) else {}
+        
+        # Parse marker information from document
+        marker_info = {
+            "name": metadata.get("marker_name", "Unknown"),
+            "value": metadata.get("marker_value", ""),
+            "status": metadata.get("marker_status", "normal"),
+            "source": metadata.get("source", "unknown")
+        }
+        
+        # Extract additional info from document text
+        if "Normal Range:" in doc:
+            marker_info["normal_range"] = doc.split("Normal Range:")[1].split("\n")[0].strip()
+        
+        if "Recommendation:" in doc:
+            marker_info["recommendation"] = doc.split("Recommendation:")[1].split("\n")[0].strip()
+        
+        markers.append(marker_info)
+    
+    return markers
+
+def _extract_medical_knowledge(medical_knowledge: Dict[str, Any]) -> Dict[str, Any]:
+    """Extract medical knowledge from RAG results."""
+    knowledge = {}
+    if not medical_knowledge.get("documents"):
+        return knowledge
+    
+    for i, doc in enumerate(medical_knowledge["documents"]):
+        metadata = medical_knowledge["metadatas"][i] if i < len(medical_knowledge["metadatas"]) else {}
+        marker_name = metadata.get("marker", "unknown")
+        
+        if marker_name not in knowledge:
+            knowledge[marker_name] = []
+        
+        knowledge[marker_name].append(doc)
+    
+    return knowledge
+
+def _handle_specific_marker_question_rag(markers: Optional[List[Dict[str, Any]]], prompt: str, medical_info: Dict[str, Any], user_id: str) -> str:
+    """Handle specific marker questions with RAG context."""
+    prompt_lower = prompt.lower()
+    
+    # Search for markers in user's data
+    if not markers:
+        # Try to find markers from RAG
+        search_results = rag_manager.search_similar_markers(user_id, prompt)
+        if search_results.get("documents"):
+            markers = _extract_markers_from_rag(search_results)
+    
+    if not markers:
+        return _handle_unknown_marker_question(prompt, medical_info)
+    
+    # Find the most relevant marker
+    best_match = None
+    best_score = 0
+    
+    for marker in markers:
+        marker_name = marker.get("name", "").lower()
+        score = 0
+        
+        if marker_name in prompt_lower:
+            score += 10
+        
+        marker_words = marker_name.split()
+        for word in marker_words:
+            if len(word) > 3 and word in prompt_lower:
+                score += 5
+        
+        if score > best_score:
+            best_score = score
+            best_match = marker
+    
+    if best_match and best_score >= 5:
+        return _get_marker_specific_response_rag(best_match, prompt, medical_info)
+    
+    return _generate_comprehensive_marker_response_rag(markers, prompt, medical_info, user_id)
+
+def _handle_unknown_marker_question(prompt: str, medical_info: Dict[str, Any]) -> str:
+    """Handle questions about markers not in user's data."""
+    prompt_lower = prompt.lower()
+    
+    # Check if we have medical knowledge about this marker
+    for marker_name, knowledge in medical_info.items():
+        if marker_name.lower() in prompt_lower:
+            return _get_general_marker_info(marker_name, knowledge)
+    
+    return ("## 🔍 Marker Not Found\n\n"
+            "I don't see this marker in your uploaded data. To get personalized analysis:\n\n"
+            "**Options:**\n"
+            "• **Upload Lab Report:** Use the 'Upload Reports' tab to add your lab results\n"
+            "• **Manual Entry:** Use the 'Manual Entry' tab to input your marker values\n"
+            "• **Ask General Question:** I can provide general information about health markers\n\n"
+            "**What would you like to do?**")
+
+def _get_marker_specific_response_rag(marker: Dict[str, Any], prompt: str, medical_info: Dict[str, Any]) -> str:
+    """Get a specific response for a marker with RAG context."""
+    name = marker.get("name", "")
+    value = marker.get("value", "")
+    status = marker.get("status", "")
+    medical_knowledge = medical_info.get(name.lower(), [])
+    
+    response_parts = []
+    response_parts.append(f"## 📊 {name} Analysis")
+    response_parts.append("")
+    response_parts.append("**Your Results:**")
+    response_parts.append(f"• **Value:** {value}")
+    response_parts.append(f"• **Status:** {status.upper()}")
+    
+    # Add medical knowledge if available
+    if medical_knowledge:
+        response_parts.append("")
+        response_parts.append("## 📋 Medical Information")
+        for knowledge in medical_knowledge[:2]:  # Limit to 2 most relevant pieces
+            response_parts.append(knowledge)
+    
+    # Add personalized recommendations
+    if status != "normal":
+        response_parts.append("")
+        response_parts.append("## 💡 Personalized Recommendations")
+        response_parts.append("Based on your results, consider:")
+        
+        if "low" in status.lower():
+            response_parts.append("• **Dietary Changes:** Focus on foods rich in this nutrient")
+            response_parts.append("• **Supplements:** Consider supplementation under medical supervision")
+            response_parts.append("• **Lifestyle:** Address underlying causes")
+        elif "high" in status.lower():
+            response_parts.append("• **Medical Evaluation:** Consult your healthcare provider")
+            response_parts.append("• **Monitoring:** Regular follow-up testing")
+            response_parts.append("• **Lifestyle:** Address contributing factors")
+    
+    response_parts.append("")
+    response_parts.append("## 🎯 Next Steps")
+    response_parts.append("Discuss these results with your healthcare provider for personalized guidance.")
+    
+    return "\n".join(response_parts)
+
+def _get_general_marker_info(marker_name: str, knowledge: List[str]) -> str:
+    """Get general information about a marker from medical knowledge."""
+    response_parts = []
+    response_parts.append(f"## 📋 {marker_name.upper()} Information")
+    response_parts.append("")
+    
+    for info in knowledge[:3]:  # Limit to 3 most relevant pieces
+        response_parts.append(info)
+        response_parts.append("")
+    
+    response_parts.append("**Note:** For personalized analysis, please upload your lab results or use manual entry.")
+    
+    return "\n".join(response_parts)
+
+def _generate_comprehensive_marker_response_rag(markers: Optional[List[Dict[str, Any]]], prompt: str, medical_info: Dict[str, Any], user_id: str) -> str:
+    """Generate comprehensive response with RAG context."""
+    if not markers:
+        return _handle_unknown_marker_question(prompt, medical_info)
+    
+    abnormal_markers = [m for m in markers if m.get("status") != "normal"]
+    normal_markers = [m for m in markers if m.get("status") == "normal"]
+    
+    if not abnormal_markers:
+        return ("## ✅ All Markers Normal\n\n"
+                f"Great news! All {len(markers)} of your health markers are within normal ranges.\n\n"
+                "**Keep up the good work:** Continue maintaining your healthy lifestyle!")
+    
+    response_parts = []
+    response_parts.append(f"## 📊 Health Markers Summary")
+    response_parts.append(f"**Analysis of {len(markers)} Health Markers**")
+    response_parts.append("")
+    
+    if abnormal_markers:
+        response_parts.append(f"## ⚠️ Abnormal Markers ({len(abnormal_markers)})")
+        for marker in abnormal_markers:
+            name = marker.get("name", "")
+            value = marker.get("value", "")
+            status = marker.get("status", "")
+            response_parts.append(f"• **{name}:** {value} ({status.upper()})")
+        response_parts.append("")
+    
+    if normal_markers:
+        response_parts.append(f"## ✅ Normal Markers ({len(normal_markers)})")
+        for marker in normal_markers:
+            name = marker.get("name", "")
+            value = marker.get("value", "")
+            response_parts.append(f"• **{name}:** {value}")
+        response_parts.append("")
+    
+    response_parts.append("## 💡 Recommendations")
+    response_parts.append("• **Prioritize Abnormal Markers:** Focus on addressing the concerning results first")
+    response_parts.append("• **Lifestyle Changes:** Implement diet and exercise modifications")
+    response_parts.append("• **Medical Consultation:** Consider consulting your healthcare provider")
+    response_parts.append("• **Follow-up Testing:** Schedule repeat testing as recommended")
+    response_parts.append("")
+    response_parts.append("**Next Steps:** Discuss these results with your healthcare provider for personalized guidance.")
+    
+    return "\n".join(response_parts)
+
+# Placeholder functions for other RAG handlers (to be implemented as needed)
+def _handle_doctor_question_rag(markers, prompt, medical_info, user_id):
+    return _handle_doctor_question(markers or [], prompt)
+
+def _handle_treatment_question_rag(markers, prompt, medical_info, user_id):
+    return _handle_treatment_question(markers or [], prompt)
+
+def _handle_food_question_rag(markers, prompt, medical_info, user_id):
+    return _handle_food_question(markers or [], prompt)
+
+def _handle_symptom_question_rag(markers, prompt, medical_info, user_id):
+    return _handle_symptom_question(markers or [], prompt)
+
+def _handle_testing_question_rag(markers, prompt, medical_info, user_id):
+    return _handle_testing_question(markers or [], prompt)
+
+def _handle_followup_question_rag(markers, prompt, medical_info, chat_history, user_id):
+    return _handle_followup_question(markers or [], prompt, chat_history)

@@ -147,11 +147,12 @@ async def send_message(
                 "content": msg.content
             })
         
-        # Generate AI response with markers and chat history
+        # Generate AI response with markers and chat history using RAG
         ai_response = run_agent(
             prompt=message_data.content,
             markers=all_markers if all_markers else None,
-            chat_history=chat_history if chat_history else None
+            chat_history=chat_history if chat_history else None,
+            user_id=str(current_user.id)
         )
         
     except Exception as e:
@@ -178,6 +179,35 @@ async def send_message(
         "content": ai_message.content,
         "timestamp": ai_message.timestamp.isoformat()
     }
+
+@router.get("/rag-test/{user_id}")
+async def test_rag_system(
+    user_id: str,
+    query: str,
+    current_user: User = Depends(verify_token),
+    db: Session = Depends(get_db)
+):
+    """Test endpoint for RAG system."""
+    try:
+        from utils.rag_manager import rag_manager
+        
+        # Test RAG retrieval
+        context = rag_manager.retrieve_relevant_context(user_id, query)
+        
+        # Get user markers summary
+        markers_summary = rag_manager.get_user_markers_summary(user_id)
+        
+        return {
+            "query": query,
+            "context": context,
+            "markers_summary": markers_summary,
+            "status": "success"
+        }
+    except Exception as e:
+        return {
+            "error": str(e),
+            "status": "error"
+        }
 
 @router.post("/sessions")
 async def create_chat_session(

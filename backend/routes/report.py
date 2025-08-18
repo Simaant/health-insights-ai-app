@@ -276,6 +276,24 @@ async def upload_report(
             report_filename = file.filename or f"report_{file_id}"
             file_type = file.content_type
         
+        # Index markers in RAG system for future retrieval
+        try:
+            from utils.rag_manager import rag_manager
+            rag_markers = []
+            for marker in detected_markers:
+                rag_markers.append({
+                    "name": marker.name,
+                    "value": marker.value,
+                    "unit": marker.unit,
+                    "status": marker.status,
+                    "normal_range": marker.normal_range,
+                    "recommendation": marker.recommendation
+                })
+            rag_manager.index_user_markers(str(current_user.id), rag_markers, file_type)
+        except Exception as e:
+            print(f"RAG indexing error: {e}")
+            # Continue without RAG indexing if it fails
+        
         # Generate AI recommendations
         recommendations_text = ""
         if extracted:
