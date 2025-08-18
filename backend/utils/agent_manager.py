@@ -1821,3 +1821,207 @@ def _get_general_testing_advice() -> str:
 
 def _handle_followup_question_rag(markers, prompt, medical_info, chat_history, user_id):
     return _handle_followup_question(markers or [], prompt, chat_history)
+
+def _handle_general_info_question(markers: Optional[List[Dict[str, Any]]], prompt: str, medical_info: Dict[str, Any], question_analysis: Dict[str, Any], user_id: str) -> str:
+    """Handle general information questions with enhanced context understanding."""
+    prompt_lower = question_analysis["prompt_lower"]
+    mentioned_markers = question_analysis["mentioned_markers"]
+    
+    # If specific markers mentioned, provide targeted information
+    if mentioned_markers:
+        target_marker = mentioned_markers[0]
+        marker_name = target_marker.get("name", "").lower()
+        status = target_marker.get("status", "")
+        
+        if "cholesterol" in marker_name:
+            return _get_cholesterol_general_info(status)
+        elif "ferritin" in marker_name or "iron" in marker_name:
+            return _get_ferritin_general_info(status)
+        elif "vitamin d" in marker_name:
+            return _get_vitamin_d_general_info(status)
+        elif "glucose" in marker_name or "blood sugar" in marker_name:
+            return _get_glucose_general_info(status)
+    
+    # If no specific markers, provide comprehensive overview
+    if markers:
+        return _generate_comprehensive_marker_response_enhanced(markers, prompt, medical_info, question_analysis, user_id)
+    
+    # General health information
+    return _get_general_health_info()
+
+def _get_cholesterol_general_info(status: str) -> str:
+    """Get general cholesterol information."""
+    if "high" in status.lower():
+        return ("📊 **Cholesterol Information**\n\n"
+                "**About High Cholesterol:**\n"
+                "• High cholesterol increases heart disease risk\n"
+                "• Can be managed with lifestyle changes and medication\n"
+                "• Regular monitoring is important\n\n"
+                "**Risk Factors:**\n"
+                "• Poor diet high in saturated fats\n"
+                "• Lack of exercise\n"
+                "• Smoking and excessive alcohol\n"
+                "• Family history\n\n"
+                "**Management:**\n"
+                "• Heart-healthy diet\n"
+                "• Regular exercise\n"
+                "• Weight management\n"
+                "• Medication if needed")
+    else:
+        return ("📊 **Cholesterol Information**\n\n"
+                "**About Cholesterol:**\n"
+                "• Essential for cell function and hormone production\n"
+                "• Two types: HDL (good) and LDL (bad)\n"
+                "• Balanced levels are important for health\n\n"
+                "**Maintaining Healthy Levels:**\n"
+                "• Heart-healthy diet\n"
+                "• Regular exercise\n"
+                "• Avoid smoking\n"
+                "• Regular checkups")
+
+def _get_ferritin_general_info(status: str) -> str:
+    """Get general ferritin information."""
+    if "low" in status.lower():
+        return ("📊 **Ferritin Information**\n\n"
+                "**About Low Ferritin:**\n"
+                "• Indicates iron deficiency\n"
+                "• Can cause fatigue and other symptoms\n"
+                "• Treatable with diet and supplements\n\n"
+                "**Common Causes:**\n"
+                "• Inadequate dietary iron\n"
+                "• Blood loss (menstruation, GI bleeding)\n"
+                "• Poor iron absorption\n"
+                "• Pregnancy or growth spurts\n\n"
+                "**Treatment:**\n"
+                "• Iron-rich diet\n"
+                "• Iron supplements\n"
+                "• Address underlying causes")
+    else:
+        return ("📊 **Ferritin Information**\n\n"
+                "**About Ferritin:**\n"
+                "• Protein that stores iron in the body\n"
+                "• Important for oxygen transport\n"
+                "• Normal levels vary by age and gender\n\n"
+                "**Maintaining Healthy Levels:**\n"
+                "• Iron-rich diet\n"
+                "• Vitamin C to enhance absorption\n"
+                "• Regular monitoring if at risk")
+
+def _get_vitamin_d_general_info(status: str) -> str:
+    """Get general vitamin D information."""
+    if "low" in status.lower():
+        return ("📊 **Vitamin D Information**\n\n"
+                "**About Low Vitamin D:**\n"
+                "• Common deficiency, especially in winter\n"
+                "• Important for bone health and immunity\n"
+                "• Can be corrected with supplements\n\n"
+                "**Common Causes:**\n"
+                "• Limited sun exposure\n"
+                "• Dark skin\n"
+                "• Obesity\n"
+                "• Certain medications\n\n"
+                "**Treatment:**\n"
+                "• Vitamin D supplements\n"
+                "• Safe sun exposure\n"
+                "• Vitamin D-rich foods")
+    else:
+        return ("📊 **Vitamin D Information**\n\n"
+                "**About Vitamin D:**\n"
+                "• Essential for bone health and immunity\n"
+                "• Produced by skin with sun exposure\n"
+                "• Also found in some foods\n\n"
+                "**Maintaining Healthy Levels:**\n"
+                "• Moderate sun exposure\n"
+                "• Vitamin D-rich foods\n"
+                "• Supplements if needed")
+
+def _get_glucose_general_info(status: str) -> str:
+    """Get general glucose information."""
+    if "high" in status.lower():
+        return ("📊 **Blood Sugar Information**\n\n"
+                "**About High Blood Sugar:**\n"
+                "• Can indicate prediabetes or diabetes\n"
+                "• Requires lifestyle changes and monitoring\n"
+                "• Can be managed effectively\n\n"
+                "**Risk Factors:**\n"
+                "• Family history of diabetes\n"
+                "• Obesity and sedentary lifestyle\n"
+                "• Poor diet high in refined carbs\n"
+                "• Age over 45\n\n"
+                "**Management:**\n"
+                "• Healthy diet and exercise\n"
+                "• Weight management\n"
+                "• Regular monitoring\n"
+                "• Medication if needed")
+    else:
+        return ("📊 **Blood Sugar Information**\n\n"
+                "**About Blood Sugar:**\n"
+                "• Primary energy source for cells\n"
+                "• Regulated by insulin\n"
+                "• Important for overall health\n\n"
+                "**Maintaining Healthy Levels:**\n"
+                "• Balanced diet\n"
+                "• Regular exercise\n"
+                "• Healthy weight\n"
+                "• Regular checkups")
+
+def _get_general_health_info() -> str:
+    """Get general health information."""
+    return ("🏥 **General Health Information**\n\n"
+            "**Key Health Markers:**\n"
+            "• Blood pressure: Heart health indicator\n"
+            "• Cholesterol: Cardiovascular risk factor\n"
+            "• Blood sugar: Diabetes risk indicator\n"
+            "• Iron levels: Energy and oxygen transport\n"
+            "• Vitamin D: Bone health and immunity\n\n"
+            "**Maintaining Good Health:**\n"
+            "• Balanced diet rich in whole foods\n"
+            "• Regular exercise (150 minutes/week)\n"
+            "• Adequate sleep (7-9 hours)\n"
+            "• Stress management\n"
+            "• Regular checkups\n\n"
+            "**Prevention:**\n"
+            "• Know your family history\n"
+            "• Monitor risk factors\n"
+            "• Early detection through screening")
+
+def _generate_comprehensive_marker_response_enhanced(markers: List[Dict[str, Any]], prompt: str, medical_info: Dict[str, Any], question_analysis: Dict[str, Any], user_id: str) -> str:
+    """Generate comprehensive marker response with enhanced formatting."""
+    if not markers:
+        return "I don't see any health markers in your data. Please add some markers through manual entry or upload a report to get personalized insights."
+    
+    # Separate normal and abnormal markers
+    normal_markers = [m for m in markers if m.get("status", "").lower() == "normal"]
+    abnormal_markers = [m for m in markers if m.get("status", "").lower() != "normal"]
+    
+    response_parts = []
+    response_parts.append(f"📊 **Health Markers Summary**")
+    response_parts.append(f"Analysis of {len(markers)} Health Markers")
+    response_parts.append("")
+    
+    if abnormal_markers:
+        response_parts.append(f"⚠️ **Abnormal Markers ({len(abnormal_markers)})**")
+        for marker in abnormal_markers:
+            name = marker.get("name", "")
+            value = marker.get("value", "")
+            status = marker.get("status", "")
+            response_parts.append(f"• {name}: {value} ({status.upper()})")
+        response_parts.append("")
+    
+    if normal_markers:
+        response_parts.append(f"✅ **Normal Markers ({len(normal_markers)})**")
+        for marker in normal_markers:
+            name = marker.get("name", "")
+            value = marker.get("value", "")
+            response_parts.append(f"• {name}: {value}")
+        response_parts.append("")
+    
+    response_parts.append("💡 **Recommendations**")
+    response_parts.append("• Prioritize Abnormal Markers: Focus on addressing the concerning results first")
+    response_parts.append("• Lifestyle Changes: Implement diet and exercise modifications")
+    response_parts.append("• Medical Consultation: Consider consulting your healthcare provider")
+    response_parts.append("• Follow-up Testing: Schedule repeat testing as recommended")
+    response_parts.append("")
+    response_parts.append("**Next Steps:** Discuss these results with your healthcare provider for personalized guidance.")
+    
+    return "\n".join(response_parts)
