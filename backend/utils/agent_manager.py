@@ -459,84 +459,280 @@ def _handle_food_question(markers: List[Dict[str, Any]], user_prompt: str) -> st
     prompt_lower = user_prompt.lower()
     abnormal_markers = [m for m in markers if m.get("status") != "normal"]
     
-    # Check for specific nutrient deficiencies
+    # First, check if user is asking about a specific marker mentioned in the prompt
+    mentioned_markers = []
+    for marker in markers:
+        marker_name = marker.get("name", "").lower()
+        if marker_name in prompt_lower:
+            mentioned_markers.append(marker)
+    
+    # If specific markers are mentioned, prioritize those
+    if mentioned_markers:
+        recommendations = []
+        for marker in mentioned_markers:
+            marker_name = marker.get("name", "").lower()
+            status = marker.get("status", "").lower()
+            
+            if "hba1c" in marker_name or "glycated" in marker_name or "a1c" in marker_name:
+                if status == "high":
+                    recommendations.append(_get_diabetes_food_advice())
+                elif status == "low":
+                    recommendations.append(_get_hypoglycemia_food_advice())
+            
+            elif "cholesterol" in marker_name:
+                if status == "high":
+                    recommendations.append(_get_high_cholesterol_food_advice())
+                elif status == "low":
+                    recommendations.append(_get_low_cholesterol_food_advice())
+            
+            elif "ferritin" in marker_name or "iron" in marker_name:
+                if status == "low":
+                    recommendations.append(_get_iron_food_advice())
+            
+            elif "vitamin d" in marker_name:
+                if status == "low":
+                    recommendations.append(_get_vitamin_d_food_advice())
+            
+            elif "vitamin b12" in marker_name or "b12" in marker_name:
+                if status == "low":
+                    recommendations.append(_get_vitamin_b12_food_advice())
+            
+            elif "magnesium" in marker_name:
+                if status == "low":
+                    recommendations.append(_get_magnesium_food_advice())
+            
+            elif "calcium" in marker_name:
+                if status == "low":
+                    recommendations.append(_get_calcium_food_advice())
+            
+            elif "potassium" in marker_name:
+                if status == "low":
+                    recommendations.append(_get_potassium_food_advice())
+            
+            else:
+                # Generic advice for unknown markers
+                recommendations.append(_get_generic_marker_food_advice(marker_name, status))
+        
+        if recommendations:
+            return "\n\n".join(recommendations)
+    
+    # If no specific markers mentioned, check for general food-related keywords
+    if any(word in prompt_lower for word in ["diabetes", "blood sugar", "glucose", "hba1c", "a1c"]):
+        return _get_diabetes_food_advice()
+    
+    if any(word in prompt_lower for word in ["cholesterol", "heart", "cardiovascular"]):
+        return _get_high_cholesterol_food_advice()
+    
+    if any(word in prompt_lower for word in ["iron", "ferritin", "anemia"]):
+        return _get_iron_food_advice()
+    
+    # Check for specific nutrient deficiencies in user's markers
     iron_deficient = any(m.get("name", "").lower() in ["ferritin", "iron"] and m.get("status") == "low" for m in markers)
     vitamin_d_deficient = any(m.get("name", "").lower() in ["vitamin d", "25-oh vitamin d"] and m.get("status") in ["low", "deficient"] for m in markers)
     vitamin_b12_deficient = any(m.get("name", "").lower() in ["vitamin b12", "b12"] and m.get("status") in ["low", "deficient"] for m in markers)
-    vitamin_c_mentioned = "vitamin c" in prompt_lower or "vit c" in prompt_lower
     
-    # Build personalized recommendations
+    # Build personalized recommendations for detected deficiencies
     recommendations = []
     
     if iron_deficient:
-        recommendations.append("🥩 **Iron-Rich Foods for Low Ferritin**\n\n"
-                              "**High-Iron Foods:**\n"
-                              "• Red Meat: Lean beef, lamb, and pork\n"
-                              "• Poultry: Chicken and turkey (dark meat)\n"
-                              "• Fish: Tuna, salmon, and sardines\n"
-                              "• Legumes: Beans, lentils, and chickpeas\n"
-                              "• Dark Leafy Greens: Spinach, kale, and Swiss chard\n"
-                              "• Fortified Foods: Cereals, breads, and pasta\n\n"
-                              "**Enhance Iron Absorption:**\n"
-                              "• Vitamin C Foods: Citrus fruits, bell peppers, tomatoes\n"
-                              "• Avoid with Coffee/Tea: Wait 1-2 hours after meals\n"
-                              "• Cook in Cast Iron: Can increase iron content\n\n"
-                              "**Recommended Daily Intake:** 18mg for women, 8mg for men")
-    
-    if vitamin_c_mentioned and iron_deficient:
-        recommendations.append("🍊 **Vitamin C Foods for Iron Absorption**\n\n"
-                              "**Best Vitamin C Sources:**\n"
-                              "• Citrus Fruits: Oranges, grapefruits, lemons, limes\n"
-                              "• Bell Peppers: Red, yellow, and green peppers\n"
-                              "• Berries: Strawberries, raspberries, blueberries\n"
-                              "• Tropical Fruits: Kiwi, pineapple, mango\n"
-                              "• Vegetables: Broccoli, Brussels sprouts, tomatoes\n"
-                              "• Leafy Greens: Spinach, kale, and mustard greens\n\n"
-                              "**Pro Tip:** Eat vitamin C foods with iron-rich meals to boost absorption by up to 3x!")
+        recommendations.append(_get_iron_food_advice())
     
     if vitamin_d_deficient:
-        recommendations.append("## 🐟 Vitamin D Sources\n\n"
-                              "**Food Sources:**\n"
-                              "• **Fatty Fish:** Salmon, tuna, mackerel, sardines\n"
-                              "• **Egg Yolks:** From pasture-raised chickens\n"
-                              "• **Fortified Dairy:** Milk, yogurt, and cheese\n"
-                              "• **Mushrooms:** Exposed to UV light\n"
-                              "• **Fortified Plant Milk:** Almond, soy, oat milk\n\n"
-                              "**Sunlight:** 10-15 minutes daily on arms/face")
+        recommendations.append(_get_vitamin_d_food_advice())
     
     if vitamin_b12_deficient:
-        recommendations.append("## 🥩 Vitamin B12 Sources\n\n"
-                              "**Animal Sources:**\n"
-                              "• **Meat:** Beef, pork, lamb, and poultry\n"
-                              "• **Fish:** Salmon, tuna, trout, and sardines\n"
-                              "• **Eggs:** Especially the yolks\n"
-                              "• **Dairy:** Milk, cheese, and yogurt\n\n"
-                              "**Fortified Sources:**\n"
-                              "• **Plant Milks:** Almond, soy, oat milk\n"
-                              "• **Cereals:** Fortified breakfast cereals\n"
-                              "• **Nutritional Yeast:** Great for vegetarians")
+        recommendations.append(_get_vitamin_b12_food_advice())
     
     # If we have specific recommendations, return them
     if recommendations:
         return "\n\n".join(recommendations)
     
-    # General dietary advice if no specific deficiencies
+    # General dietary advice if no specific deficiencies or mentions
     if not abnormal_markers:
         return "## ✅ All Markers Normal\n\nSince all your markers are normal, maintain a balanced diet with plenty of fruits, vegetables, lean proteins, and whole grains."
     
-    return ("🍎 **General Dietary Recommendations**\n\n"
-            "**Balanced Nutrition Guidelines:**\n"
-            "• Whole Foods: Focus on fresh fruits, vegetables, whole grains, and lean proteins\n"
-            "• Reduce Processed Foods: Limit packaged foods, added sugars, and refined carbohydrates\n"
-            "• Healthy Fats: Include nuts, seeds, olive oil, and fatty fish\n"
-            "• Fiber: Aim for 25-30 grams of fiber daily from fruits, vegetables, and whole grains\n\n"
+    return _get_general_dietary_advice()
+
+def _get_diabetes_food_advice() -> str:
+    """Get food advice for diabetes."""
+    return ("🍎 **Diabetes-Friendly Diet:**\n\n"
+            "**Foods to Include:**\n"
+            "• **Whole Grains:** Oatmeal, quinoa, whole wheat bread\n"
+            "• **Fruits:** Berries, apples, oranges, non-starchy fruits\n"
+            "• **Vegetables:** Non-starchy vegetables, spinach, kale\n"
+            "• **Proteins:** Lean meats, fish, legumes, tofu\n"
+            "• **Healthy Fats:** Avocados, nuts, olive oil\n\n"
+            "**Foods to Avoid:**\n"
+            "• **Simple Sugars:** Candy, soda, desserts\n"
+            "• **Refined Carbs:** White bread, pasta, rice\n"
+            "• **Processed Foods:** Packaged snacks, fast food\n\n"
+            "**Tips:**\n"
+            "• **Eat regular meals**\n"
+            "• **Include protein with carbs**\n"
+            "• **Exercise regularly**\n"
+            "• **Monitor blood sugar levels**")
+
+def _get_hypoglycemia_food_advice() -> str:
+    """Get food advice for hypoglycemia."""
+    return ("🍳 **Hypoglycemia-Friendly Diet:**\n\n"
+            "**Foods to Include:**\n"
+            "• **Complex Carbs:** Whole grains, legumes, vegetables\n"
+            "• **Fiber:** Fruits, vegetables, nuts, seeds\n"
+            "• **Lean Proteins:** Fish, poultry, legumes, tofu\n"
+            "• **Healthy Fats:** Avocados, nuts, olive oil\n\n"
+            "**Foods to Avoid:**\n"
+            "• **Simple Sugars:** Candy, soda, desserts\n"
+            "• **Refined Carbs:** White bread, pasta, rice\n"
+            "• **Processed Foods:** Packaged snacks, fast food\n\n"
+            "**Tips:**\n"
+            "• **Eat regular meals**\n"
+            "• **Include protein with carbs**\n"
+            "• **Exercise regularly**\n"
+            "• **Monitor blood sugar levels**")
+
+def _get_high_cholesterol_food_advice() -> str:
+    """Get food advice for high cholesterol."""
+    return ("🥗 **Heart-Healthy Diet for High Cholesterol:**\n\n"
+            "**Foods to Include:**\n"
+            "• **Fiber-Rich Foods:** Oats, beans, lentils, fruits, vegetables\n"
+            "• **Omega-3 Sources:** Fatty fish, walnuts, flaxseeds\n"
+            "• **Plant Sterols:** Fortified margarines, nuts\n"
+            "• **Lean Proteins:** Skinless poultry, fish, legumes\n\n"
+            "**Foods to Limit:**\n"
+            "• **Saturated Fats:** Red meat, full-fat dairy, butter\n"
+            "• **Trans Fats:** Processed foods, fried foods\n"
+            "• **Added Sugars:** Sugary drinks, desserts\n\n"
+            "**Lifestyle Tips:**\n"
+            "• **Exercise regularly:** 150 minutes/week\n"
+            "• **Maintain a healthy weight**\n"
+            "• **Consider medication:** If lifestyle changes aren't sufficient")
+
+def _get_low_cholesterol_food_advice() -> str:
+    """Get food advice for low cholesterol."""
+    return ("🥩 **Foods for Low Cholesterol**\n\n"
+            "**Foods to Include:**\n"
+            "• **Healthy Fats:** Avocados, nuts, seeds, olive oil\n"
+            "• **Fatty Fish:** Salmon, tuna, mackerel, sardines\n"
+            "• **Eggs:** Whole eggs in moderation\n"
+            "• **Dairy:** Full-fat dairy products\n"
+            "• **Coconut:** Coconut oil, coconut milk\n\n"
+            "**Foods to Avoid:**\n"
+            "• **Trans fats:** Processed foods, fried foods\n"
+            "• **Excessive sugar:** Sugary drinks, desserts\n\n"
+            "**Note:** Low cholesterol is usually beneficial, but consult your doctor if levels are extremely low.")
+
+def _get_iron_food_advice() -> str:
+    """Get food advice for iron deficiency."""
+    return ("🥩 **Iron-Rich Foods for Low Ferritin**\n\n"
+            "**High-Iron Foods:**\n"
+            "• **Red Meat:** Lean beef, lamb, and pork\n"
+            "• **Poultry:** Chicken and turkey (dark meat)\n"
+            "• **Fish:** Tuna, salmon, and sardines\n"
+            "• **Legumes:** Beans, lentils, and chickpeas\n"
+            "• **Dark Leafy Greens:** Spinach, kale, and Swiss chard\n"
+            "• **Fortified Foods:** Cereals, breads, and pasta\n\n"
+            "**Enhance Iron Absorption:**\n"
+            "• **Vitamin C Foods:** Citrus fruits, bell peppers, tomatoes\n"
+            "• **Avoid with Coffee/Tea:** Wait 1-2 hours after meals\n"
+            "• **Cook in Cast Iron:** Can increase iron content\n\n"
+            "**Recommended Daily Intake:** 18mg for women, 8mg for men")
+
+def _get_vitamin_d_food_advice() -> str:
+    """Get food advice for vitamin D deficiency."""
+    return ("🐟 **Vitamin D-Rich Foods**\n\n"
+            "**Food Sources:**\n"
+            "• **Fatty Fish:** Salmon, tuna, mackerel, sardines\n"
+            "• **Egg Yolks:** From pasture-raised chickens\n"
+            "• **Fortified Dairy:** Milk, yogurt, cheese\n"
+            "• **Mushrooms:** Exposed to UV light\n"
+            "• **Fortified Plant Milk:** Almond, soy, oat milk\n\n"
+            "**Additional Sources:**\n"
+            "• **Sunlight:** 10-15 minutes daily on arms/face\n"
+            "• **Supplements:** Consider vitamin D3 supplements\n\n"
+            "**Note:** Food sources alone may not be sufficient for low levels")
+
+def _get_vitamin_b12_food_advice() -> str:
+    """Get food advice for vitamin B12 deficiency."""
+    return ("🥩 **Vitamin B12-Rich Foods**\n\n"
+            "**Animal Sources:**\n"
+            "• **Meat:** Beef, pork, lamb, and poultry\n"
+            "• **Fish:** Salmon, tuna, trout, and sardines\n"
+            "• **Eggs:** Especially the yolks\n"
+            "• **Dairy:** Milk, cheese, and yogurt\n\n"
+            "**Fortified Sources:**\n"
+            "• **Plant Milks:** Almond, soy, oat milk\n"
+            "• **Cereals:** Fortified breakfast cereals\n"
+            "• **Nutritional Yeast:** Great for vegetarians")
+
+def _get_magnesium_food_advice() -> str:
+    """Get food advice for magnesium deficiency."""
+    return ("🥗 **Magnesium-Rich Foods**\n\n"
+            "**Food Sources:**\n"
+            "• **Green Leafy Greens:** Spinach, kale, Swiss chard\n"
+            "• **Nuts and Seeds:** Almonds, walnuts, pumpkin seeds\n"
+            "• **Legumes:** Beans, lentils, chickpeas\n"
+            "• **Whole Grains:** Oats, quinoa, whole wheat bread\n\n"
+            "**Tips for Better Absorption:**\n"
+            "• **Pair magnesium foods with calcium**\n"
+            "• **Avoid calcium supplements if possible**\n"
+            "• **Cook in cast iron pans**")
+
+def _get_calcium_food_advice() -> str:
+    """Get food advice for calcium deficiency."""
+    return ("🥗 **Calcium-Rich Foods**\n\n"
+            "**Food Sources:**\n"
+            "• **Dairy Products:** Milk, yogurt, cheese\n"
+            "• **Green Leafy Greens:** Spinach, kale, Swiss chard\n"
+            "• **Nuts and Seeds:** Almonds, walnuts, pumpkin seeds\n"
+            "• **Legumes:** Beans, lentils, chickpeas\n\n"
+            "**Tips for Better Absorption:**\n"
+            "• **Pair calcium foods with vitamin D**\n"
+            "• **Avoid calcium supplements if possible**\n"
+            "• **Cook in cast iron pans**")
+
+def _get_potassium_food_advice() -> str:
+    """Get food advice for potassium deficiency."""
+    return ("🥗 **Potassium-Rich Foods**\n\n"
+            "**Food Sources:**\n"
+            "• **Bananas:** Potassium-rich fruit\n"
+            "• **Potatoes:** Potassium-rich starchy vegetable\n"
+            "• **Legumes:** Beans, lentils, chickpeas\n"
+            "• **Nuts and Seeds:** Almonds, walnuts, pumpkin seeds\n"
+            "• **Green Leafy Greens:** Spinach, kale, Swiss chard\n\n"
+            "**Tips for Better Absorption:**\n"
+            "• **Pair potassium foods with sodium**\n"
+            "• **Avoid potassium supplements if possible**\n"
+            "• **Cook in cast iron pans**")
+
+def _get_generic_marker_food_advice(marker_name: str, status: str) -> str:
+    """Get generic advice for unknown markers."""
+    return (f"🍎 **General Advice for {marker_name.capitalize()}**\n\n"
+            "**Status:** {status.capitalize()}\n\n"
+            "**Considerations:**\n"
+            "• **Dietary Changes:** Increase foods rich in this nutrient\n"
+            "• **Supplements:** Consider supplementation under medical supervision\n"
+            "• **Lifestyle:** Address underlying causes\n"
+            "• **Regular Monitoring:** Retest levels periodically\n\n"
+            "**Next Steps:** Discuss these recommendations with your healthcare provider for personalized guidance.")
+
+def _get_general_dietary_advice() -> str:
+    """Get general healthy eating advice."""
+    return ("🍎 **General Healthy Eating Guidelines**\n\n"
+            "**Balanced Nutrition:**\n"
+            "• **Whole Foods:** Fresh fruits, vegetables, whole grains\n"
+            "• **Lean Proteins:** Fish, poultry, legumes, eggs\n"
+            "• **Healthy Fats:** Nuts, seeds, olive oil, avocados\n"
+            "• **Fiber:** 25-30 grams daily from various sources\n\n"
             "**Daily Recommendations:**\n"
-            "• Proteins: Lean meats, fish, eggs, legumes, and plant-based proteins\n"
-            "• Vegetables: Aim for 2-3 cups daily, including leafy greens\n"
-            "• Fruits: 1-2 servings daily, focusing on low-sugar options\n"
-            "• Hydration: Drink 8-10 glasses of water daily\n\n"
-            "**Next Steps:**\n"
-            "Consider consulting a registered dietitian for personalized meal planning and guidance.")
+            "• **Vegetables:** 2-3 cups daily\n"
+            "• **Fruits:** 1-2 servings daily\n"
+            "• **Proteins:** Lean sources with each meal\n"
+            "• **Hydration:** 8-10 glasses of water daily\n\n"
+            "**Tips:**\n"
+            "• **Limit processed foods**\n"
+            "• **Reduce added sugars**\n"
+            "• **Cook at home when possible**\n"
+            "• **Practice portion control**")
 
 def _handle_symptom_question(markers: List[Dict[str, Any]], user_prompt: str) -> str:
     """Handle symptom-related questions."""
