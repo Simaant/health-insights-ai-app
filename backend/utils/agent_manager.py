@@ -95,14 +95,14 @@ def _generate_llm_enhanced_response(prompt: str, markers: Optional[List[Dict[str
         context_str = _build_llm_context(prompt, markers, chat_history, context)
         
         # Create a more specific prompt for the LLM
-        llm_prompt = f"""Based on the health information below, provide a clear and helpful response to the user's question about their health markers.
+        llm_prompt = f"""You are a medical AI assistant helping with health markers.
 
 Health Information:
 {context_str}
 
-Question: {prompt}
+User Question: {prompt}
 
-Provide a concise, accurate response with specific recommendations. Focus on practical advice and avoid repetition:"""
+Provide a helpful, specific response about the user's health markers. Focus on practical advice and be specific to the markers mentioned above."""
 
         # Generate response with better parameters
         response = _generate_llm_enhanced_response.model(
@@ -127,6 +127,19 @@ Provide a concise, accurate response with specific recommendations. Focus on pra
         if "such as" in cleaned_response.lower() and cleaned_response.lower().count("such as") > 3:
             print("LLM response too repetitive, falling back to rule-based")
             return None
+        
+        # Check if LLM is repeating instructions
+        instruction_indicators = [
+            "if the user asks about a specific marker",
+            "provide detailed, specific advice",
+            "maintain context about the marker",
+            "do not give general advice",
+            "be specific and detailed"
+        ]
+        
+        if any(indicator in cleaned_response.lower() for indicator in instruction_indicators):
+            print("LLM repeating instructions, falling back to rule-based")
+            return None
             
         # Add debugging to see what responses are being generated
         print(f"LLM generated response: {cleaned_response[:100]}...")
@@ -141,9 +154,9 @@ def _build_llm_context(prompt: str, markers: Optional[List[Dict[str, Any]]], cha
     """Build context string for LLM from RAG results and user data."""
     context_parts = []
     
-    # Add user's markers
+    # Add user's markers with emphasis on current discussion
     if markers:
-        context_parts.append("User's Health Markers:")
+        context_parts.append("CURRENT HEALTH MARKERS (Focus on these specifically):")
         for marker in markers:
             name = marker.get("name", "")
             value = marker.get("value", "")
@@ -154,7 +167,7 @@ def _build_llm_context(prompt: str, markers: Optional[List[Dict[str, Any]]], cha
     
     # Add medical knowledge for the specific markers
     if markers:
-        context_parts.append("\nMedical Knowledge:")
+        context_parts.append("\nSPECIFIC MEDICAL KNOWLEDGE FOR THESE MARKERS:")
         for marker in markers:
             marker_name = marker.get("name", "").lower()
             status = marker.get("status", "")
@@ -165,6 +178,7 @@ def _build_llm_context(prompt: str, markers: Optional[List[Dict[str, Any]]], cha
                     context_parts.append("- Selenium is an antioxidant that supports thyroid function and immune health.")
                     context_parts.append("- Low selenium symptoms: muscle weakness, fatigue, thyroid problems, immune issues")
                     context_parts.append("- Selenium-rich foods: Brazil nuts, fish, meat, eggs")
+                    context_parts.append("- Selenium lifestyle: Avoid excessive alcohol, ensure adequate protein intake")
                 elif status == "high":
                     context_parts.append("- High selenium symptoms: hair loss, nail changes, gastrointestinal issues")
             
@@ -173,6 +187,7 @@ def _build_llm_context(prompt: str, markers: Optional[List[Dict[str, Any]]], cha
                     context_parts.append("- Calcium is essential for bone health, muscle function, and nerve transmission.")
                     context_parts.append("- Low calcium symptoms: muscle cramps, numbness, tingling, bone pain, fatigue")
                     context_parts.append("- Calcium-rich foods: dairy products, leafy greens, nuts, seeds")
+                    context_parts.append("- Calcium lifestyle: Weight-bearing exercise, vitamin D exposure, limit caffeine")
                 elif status == "high":
                     context_parts.append("- High calcium symptoms: nausea, vomiting, confusion, muscle weakness, kidney stones")
             
@@ -180,7 +195,8 @@ def _build_llm_context(prompt: str, markers: Optional[List[Dict[str, Any]]], cha
                 if status == "low":
                     context_parts.append("- Magnesium is involved in over 300 enzymatic reactions and is essential for muscle and nerve function.")
                     context_parts.append("- Low magnesium symptoms: muscle cramps, fatigue, weakness, irregular heartbeat, anxiety")
-                    context_parts.append("- Magnesium-rich foods: green leafy greens, nuts, seeds, legumes, whole grains")
+                    context_parts.append("- Magnesium-rich foods: green leafy greens, nuts, seeds, legumes, whole grains, dark chocolate")
+                    context_parts.append("- Magnesium lifestyle: Reduce stress, limit alcohol, ensure adequate sleep, exercise regularly")
                 elif status == "high":
                     context_parts.append("- High magnesium symptoms: nausea, vomiting, muscle weakness, irregular heartbeat")
             
@@ -188,7 +204,8 @@ def _build_llm_context(prompt: str, markers: Optional[List[Dict[str, Any]]], cha
                 if status == "low":
                     context_parts.append("- Zinc is essential for immune function, wound healing, and protein synthesis.")
                     context_parts.append("- Low zinc symptoms: frequent infections, slow wound healing, hair loss, taste changes")
-                    context_parts.append("- Zinc-rich foods: meat, shellfish, legumes, nuts")
+                    context_parts.append("- Zinc-rich foods: meat, shellfish, legumes, nuts, seeds")
+                    context_parts.append("- Zinc lifestyle: Ensure adequate protein intake, avoid excessive fiber, limit alcohol")
                 elif status == "high":
                     context_parts.append("- High zinc symptoms: nausea, vomiting, diarrhea, copper deficiency")
             
@@ -197,8 +214,15 @@ def _build_llm_context(prompt: str, markers: Optional[List[Dict[str, Any]]], cha
                     context_parts.append(f"- {marker.get('name')} is a vitamin essential for various bodily functions.")
                     context_parts.append(f"- Low {marker.get('name')} symptoms: fatigue, weakness, immune issues")
                     context_parts.append(f"- {marker.get('name')}-rich foods: varies by vitamin type")
+                    context_parts.append(f"- {marker.get('name')} lifestyle: balanced diet, sun exposure (for D), stress management")
                 elif status == "high":
                     context_parts.append(f"- High {marker.get('name')} symptoms: usually asymptomatic, may indicate underlying condition")
+            
+            else:
+                # Generic knowledge for unknown markers
+                context_parts.append(f"- {marker.get('name')} is a health marker that your doctor uses to assess your overall health status.")
+                context_parts.append(f"- Current status: {status}")
+                context_parts.append(f"- Focus on foods rich in {marker.get('name')} and consult your healthcare provider")
     
     # Add RAG medical knowledge if available
     medical_knowledge = context.get("medical_knowledge", {})
@@ -209,7 +233,7 @@ def _build_llm_context(prompt: str, markers: Optional[List[Dict[str, Any]]], cha
     
     # Add chat history context (more comprehensive)
     if chat_history:
-        context_parts.append("\nRecent Conversation:")
+        context_parts.append("\nRECENT CONVERSATION CONTEXT:")
         # Include more context - last 4 messages instead of 2
         recent_messages = chat_history[-4:]  # Last 4 messages
         for msg in recent_messages:
