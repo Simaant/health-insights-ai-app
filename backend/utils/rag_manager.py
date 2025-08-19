@@ -24,6 +24,8 @@ class RAGManager:
             self.markers_storage = {}
             self.chat_history_storage = {}
             self.medical_knowledge = self._initialize_medical_knowledge_fallback()
+            # Initialize a simple text splitter for fallback mode
+            self.text_splitter = self._create_simple_text_splitter()
             return
         
         try:
@@ -64,7 +66,33 @@ class RAGManager:
             self.markers_storage = {}
             self.chat_history_storage = {}
             self.medical_knowledge = self._initialize_medical_knowledge_fallback()
-    
+            # Initialize a simple text splitter for fallback mode
+            self.text_splitter = self._create_simple_text_splitter()
+
+    def _create_simple_text_splitter(self):
+        """Create a simple text splitter for fallback mode."""
+        class SimpleTextSplitter:
+            def split_text(self, text):
+                # Simple splitting by sentences
+                sentences = text.split('. ')
+                chunks = []
+                current_chunk = ""
+                
+                for sentence in sentences:
+                    if len(current_chunk) + len(sentence) < 500:
+                        current_chunk += sentence + ". "
+                    else:
+                        if current_chunk:
+                            chunks.append(current_chunk.strip())
+                        current_chunk = sentence + ". "
+                
+                if current_chunk:
+                    chunks.append(current_chunk.strip())
+                
+                return chunks
+        
+        return SimpleTextSplitter()
+
     def _initialize_medical_knowledge(self):
         """Initialize the medical knowledge base with comprehensive health markers."""
         medical_knowledge = [
@@ -122,64 +150,52 @@ class RAGManager:
                 "high_treatment": "Diet changes, exercise, medications, insulin",
                 "low_symptoms": "Shakiness, confusion, sweating, hunger, dizziness",
                 "low_causes": "Insulin overdose, skipping meals, excessive exercise",
-                "low_treatment": "Glucose tablets, juice, regular meals, medication adjustment"
+                "low_treatment": "Glucose tablets, regular meals, medication adjustment"
             },
-            {
-                "marker": "tsh",
-                "description": "Thyroid Stimulating Hormone regulates thyroid function and metabolism.",
-                "normal_range": "0.4-4.0 mIU/L",
-                "high_symptoms": "Fatigue, weight gain, cold intolerance, depression",
-                "high_causes": "Hypothyroidism, thyroiditis, iodine deficiency",
-                "high_treatment": "Thyroid hormone replacement (levothyroxine)",
-                "low_symptoms": "Weight loss, heat intolerance, anxiety, rapid heartbeat",
-                "low_causes": "Hyperthyroidism, Graves' disease, thyroid nodules",
-                "low_treatment": "Anti-thyroid medications, radioactive iodine, surgery"
-            },
-            
-            # Additional comprehensive markers
-            {
-                "marker": "magnesium",
-                "description": "Magnesium is essential for muscle and nerve function, blood pressure regulation, and bone health.",
-                "normal_range": "1.7-2.2 mg/dL",
-                "low_symptoms": "Muscle cramps, fatigue, nausea, loss of appetite, numbness",
-                "low_causes": "Poor diet, alcoholism, diabetes, kidney disease, medications",
-                "low_treatment": "Magnesium supplements, magnesium-rich foods (nuts, seeds, leafy greens)",
-                "high_symptoms": "Nausea, vomiting, muscle weakness, irregular heartbeat",
-                "high_causes": "Kidney disease, excessive supplementation, certain medications",
-                "high_treatment": "Reduce supplementation, address underlying cause"
-            },
+            # Add more comprehensive markers
             {
                 "marker": "calcium",
                 "description": "Calcium is essential for bone health, muscle function, and nerve transmission.",
                 "normal_range": "8.5-10.5 mg/dL",
-                "low_symptoms": "Muscle cramps, numbness, tingling, fatigue, bone pain",
-                "low_causes": "Vitamin D deficiency, parathyroid problems, kidney disease",
-                "low_treatment": "Calcium supplements, vitamin D, calcium-rich foods",
+                "low_symptoms": "Muscle cramps, numbness, tingling, bone pain, fatigue",
+                "low_causes": "Vitamin D deficiency, parathyroid problems, poor diet, malabsorption",
+                "low_treatment": "Calcium supplements, vitamin D, dairy products, leafy greens",
                 "high_symptoms": "Nausea, vomiting, confusion, muscle weakness, kidney stones",
                 "high_causes": "Hyperparathyroidism, cancer, excessive supplementation",
-                "high_treatment": "Address underlying cause, reduce calcium intake"
+                "high_treatment": "Address underlying cause, reduce calcium intake, medications"
+            },
+            {
+                "marker": "magnesium",
+                "description": "Magnesium is involved in over 300 enzymatic reactions and is essential for muscle and nerve function.",
+                "normal_range": "1.7-2.2 mg/dL",
+                "low_symptoms": "Muscle cramps, fatigue, weakness, irregular heartbeat, anxiety",
+                "low_causes": "Poor diet, alcohol abuse, diabetes, medications, malabsorption",
+                "low_treatment": "Magnesium supplements, nuts, seeds, leafy greens, whole grains",
+                "high_symptoms": "Nausea, vomiting, muscle weakness, irregular heartbeat",
+                "high_causes": "Kidney disease, excessive supplementation, certain medications",
+                "high_treatment": "Address underlying cause, reduce supplementation"
             },
             {
                 "marker": "potassium",
-                "description": "Potassium is crucial for heart function, muscle contractions, and nerve signals.",
+                "description": "Potassium is essential for heart function, muscle contractions, and fluid balance.",
                 "normal_range": "3.5-5.0 mEq/L",
                 "low_symptoms": "Muscle weakness, fatigue, irregular heartbeat, constipation",
                 "low_causes": "Diuretics, vomiting, diarrhea, poor diet, kidney disease",
-                "low_treatment": "Potassium supplements, potassium-rich foods (bananas, potatoes)",
-                "high_symptoms": "Muscle weakness, irregular heartbeat, nausea, numbness",
+                "low_treatment": "Potassium supplements, bananas, potatoes, leafy greens",
+                "high_symptoms": "Muscle weakness, irregular heartbeat, numbness, tingling",
                 "high_causes": "Kidney disease, medications, excessive supplementation",
-                "high_treatment": "Address underlying cause, dietary changes"
+                "high_treatment": "Address underlying cause, dietary restrictions, medications"
             },
             {
                 "marker": "sodium",
                 "description": "Sodium is essential for fluid balance, nerve function, and muscle contractions.",
                 "normal_range": "135-145 mEq/L",
-                "low_symptoms": "Nausea, headache, confusion, fatigue, muscle cramps",
+                "low_symptoms": "Confusion, fatigue, muscle cramps, nausea, headache",
                 "low_causes": "Excessive water intake, diuretics, heart failure, kidney disease",
-                "low_treatment": "Reduce fluid intake, address underlying cause",
+                "low_treatment": "Reduce fluid intake, address underlying cause, sodium supplements",
                 "high_symptoms": "Thirst, confusion, muscle twitching, seizures",
-                "high_causes": "Dehydration, kidney disease, excessive salt intake",
-                "high_treatment": "Fluid replacement, reduce salt intake"
+                "high_causes": "Dehydration, excessive salt intake, kidney disease",
+                "high_treatment": "Increase fluid intake, reduce salt intake, address underlying cause"
             },
             {
                 "marker": "zinc",
@@ -187,142 +203,131 @@ class RAGManager:
                 "normal_range": "60-120 mcg/dL",
                 "low_symptoms": "Frequent infections, slow wound healing, hair loss, taste changes",
                 "low_causes": "Poor diet, malabsorption, chronic illness, vegetarian diet",
-                "low_treatment": "Zinc supplements, zinc-rich foods (meat, shellfish, legumes)",
+                "low_treatment": "Zinc supplements, meat, shellfish, legumes, nuts",
                 "high_symptoms": "Nausea, vomiting, diarrhea, copper deficiency",
                 "high_causes": "Excessive supplementation, occupational exposure",
-                "high_treatment": "Reduce supplementation, monitor copper levels"
+                "high_treatment": "Reduce supplementation, address underlying cause"
             },
             {
                 "marker": "copper",
                 "description": "Copper is essential for iron metabolism, nerve function, and connective tissue formation.",
                 "normal_range": "70-140 mcg/dL",
                 "low_symptoms": "Anemia, fatigue, bone problems, neurological issues",
-                "low_causes": "Poor diet, malabsorption, excessive zinc supplementation",
-                "low_treatment": "Copper supplements, copper-rich foods (shellfish, nuts, seeds)",
-                "high_symptoms": "Nausea, vomiting, liver problems, neurological issues",
-                "high_causes": "Wilson's disease, liver disease, excessive supplementation",
-                "high_treatment": "Address underlying cause, chelation therapy if needed"
+                "low_causes": "Poor diet, malabsorption, excessive zinc intake",
+                "low_treatment": "Copper supplements, shellfish, nuts, seeds, whole grains",
+                "high_symptoms": "Liver problems, neurological issues, psychiatric symptoms",
+                "high_causes": "Wilson's disease, excessive supplementation",
+                "high_treatment": "Chelation therapy, dietary restrictions, medications"
             },
             {
                 "marker": "selenium",
                 "description": "Selenium is an antioxidant that supports thyroid function and immune health.",
                 "normal_range": "70-150 mcg/L",
-                "low_symptoms": "Muscle weakness, fatigue, hair loss, thyroid problems",
+                "low_symptoms": "Muscle weakness, fatigue, thyroid problems, immune issues",
                 "low_causes": "Poor diet, malabsorption, certain medications",
-                "low_treatment": "Selenium supplements, selenium-rich foods (Brazil nuts, fish)",
-                "high_symptoms": "Hair loss, nail changes, nausea, neurological problems",
+                "low_treatment": "Selenium supplements, Brazil nuts, fish, meat, eggs",
+                "high_symptoms": "Hair loss, nail changes, gastrointestinal issues",
                 "high_causes": "Excessive supplementation, occupational exposure",
                 "high_treatment": "Reduce supplementation, address underlying cause"
             },
             {
-                "marker": "iron",
-                "description": "Iron is essential for oxygen transport and energy production.",
-                "normal_range": "60-170 mcg/dL",
-                "low_symptoms": "Fatigue, weakness, shortness of breath, pale skin",
-                "low_causes": "Iron deficiency, blood loss, poor diet, malabsorption",
-                "low_treatment": "Iron supplements, iron-rich foods, vitamin C for absorption",
-                "high_symptoms": "Joint pain, fatigue, abdominal pain, heart problems",
-                "high_causes": "Iron overload, hemochromatosis, excessive supplementation",
-                "high_treatment": "Phlebotomy, iron chelation therapy, dietary changes"
-            },
-            {
                 "marker": "creatinine",
                 "description": "Creatinine is a waste product filtered by the kidneys, used to assess kidney function.",
-                "normal_range": "0.6-1.2 mg/dL for men, 0.5-1.1 mg/dL for women",
-                "high_symptoms": "Fatigue, swelling, changes in urination, confusion",
-                "high_causes": "Kidney disease, dehydration, muscle injury, certain medications",
-                "high_treatment": "Address underlying cause, dietary changes, medication adjustment",
+                "normal_range": "0.6-1.2 mg/dL",
                 "low_symptoms": "Usually asymptomatic, may indicate muscle loss",
-                "low_causes": "Muscle loss, malnutrition, liver disease",
-                "low_treatment": "Address underlying cause, protein-rich diet"
+                "low_causes": "Muscle loss, aging, malnutrition, liver disease",
+                "low_treatment": "Address underlying cause, protein-rich diet, exercise",
+                "high_symptoms": "Fatigue, swelling, changes in urination, confusion",
+                "high_causes": "Kidney disease, dehydration, medications, muscle injury",
+                "high_treatment": "Address underlying cause, dietary changes, medications"
             },
             {
                 "marker": "bun",
                 "description": "Blood Urea Nitrogen measures kidney function and protein metabolism.",
                 "normal_range": "7-20 mg/dL",
-                "high_symptoms": "Fatigue, confusion, nausea, changes in urination",
-                "high_causes": "Kidney disease, dehydration, high protein diet, heart failure",
-                "high_treatment": "Address underlying cause, fluid management, dietary changes",
                 "low_symptoms": "Usually asymptomatic",
                 "low_causes": "Liver disease, malnutrition, overhydration",
-                "low_treatment": "Address underlying cause, protein-rich diet"
+                "low_treatment": "Address underlying cause, protein-rich diet",
+                "high_symptoms": "Fatigue, confusion, swelling, changes in urination",
+                "high_causes": "Kidney disease, dehydration, high protein diet, heart failure",
+                "high_treatment": "Address underlying cause, dietary changes, medications"
             },
             {
                 "marker": "albumin",
                 "description": "Albumin is a protein made by the liver that helps maintain fluid balance.",
                 "normal_range": "3.4-5.4 g/dL",
                 "low_symptoms": "Swelling, fatigue, weakness, poor wound healing",
-                "low_causes": "Liver disease, kidney disease, malnutrition, inflammation",
-                "low_treatment": "Address underlying cause, protein-rich diet",
-                "high_symptoms": "Usually asymptomatic, may indicate dehydration",
-                "high_causes": "Dehydration, excessive protein intake",
-                "high_treatment": "Fluid replacement, address underlying cause"
+                "low_causes": "Liver disease, malnutrition, inflammation, kidney disease",
+                "low_treatment": "Address underlying cause, protein-rich diet, albumin infusions",
+                "high_symptoms": "Usually asymptomatic",
+                "high_causes": "Dehydration, certain medications",
+                "high_treatment": "Address underlying cause, increase fluid intake"
             },
             {
                 "marker": "bilirubin",
                 "description": "Bilirubin is a waste product from red blood cell breakdown, processed by the liver.",
                 "normal_range": "0.3-1.2 mg/dL",
-                "high_symptoms": "Yellowing of skin/eyes (jaundice), dark urine, fatigue",
-                "high_causes": "Liver disease, bile duct obstruction, hemolysis",
-                "high_treatment": "Address underlying cause, liver support",
                 "low_symptoms": "Usually asymptomatic",
-                "low_causes": "Usually not clinically significant",
-                "low_treatment": "Usually no treatment needed"
+                "low_causes": "Certain medications, genetic factors",
+                "low_treatment": "Usually no treatment needed",
+                "high_symptoms": "Yellowing of skin/eyes, dark urine, fatigue, abdominal pain",
+                "high_causes": "Liver disease, bile duct problems, blood disorders",
+                "high_treatment": "Address underlying cause, medications, dietary changes"
             },
             {
                 "marker": "alt",
-                "description": "Alanine Aminotransferase is a liver enzyme that indicates liver damage.",
+                "description": "Alanine Aminotransferase is a liver enzyme that indicates liver health.",
                 "normal_range": "7-55 U/L",
-                "high_symptoms": "Fatigue, abdominal pain, jaundice, nausea",
-                "high_causes": "Liver disease, medications, alcohol, fatty liver",
-                "high_treatment": "Address underlying cause, liver support, lifestyle changes",
                 "low_symptoms": "Usually asymptomatic",
-                "low_causes": "Usually not clinically significant",
-                "low_treatment": "Usually no treatment needed"
+                "low_causes": "Vitamin B6 deficiency, certain medications",
+                "low_treatment": "Address underlying cause, vitamin B6 supplementation",
+                "high_symptoms": "Fatigue, abdominal pain, jaundice, nausea",
+                "high_causes": "Liver disease, medications, alcohol, obesity",
+                "high_treatment": "Address underlying cause, dietary changes, medications"
             },
             {
                 "marker": "ast",
-                "description": "Aspartate Aminotransferase is a liver enzyme that indicates liver or muscle damage.",
+                "description": "Aspartate Aminotransferase is a liver enzyme that indicates liver and heart health.",
                 "normal_range": "8-48 U/L",
-                "high_symptoms": "Fatigue, abdominal pain, jaundice, muscle pain",
-                "high_causes": "Liver disease, muscle injury, medications, alcohol",
-                "high_treatment": "Address underlying cause, liver support, rest",
                 "low_symptoms": "Usually asymptomatic",
-                "low_causes": "Usually not clinically significant",
-                "low_treatment": "Usually no treatment needed"
+                "low_causes": "Vitamin B6 deficiency, certain medications",
+                "low_treatment": "Address underlying cause, vitamin B6 supplementation",
+                "high_symptoms": "Fatigue, abdominal pain, jaundice, chest pain",
+                "high_causes": "Liver disease, heart problems, medications, alcohol",
+                "high_treatment": "Address underlying cause, dietary changes, medications"
             },
             {
                 "marker": "alkaline phosphatase",
                 "description": "Alkaline Phosphatase is an enzyme found in liver, bones, and other tissues.",
                 "normal_range": "44-147 U/L",
-                "high_symptoms": "Fatigue, abdominal pain, bone pain, jaundice",
-                "high_causes": "Liver disease, bone disease, pregnancy, growth",
-                "high_treatment": "Address underlying cause, bone/liver support",
                 "low_symptoms": "Usually asymptomatic",
-                "low_causes": "Malnutrition, hypothyroidism, certain medications",
-                "low_treatment": "Address underlying cause, nutritional support"
+                "low_causes": "Malnutrition, certain medications, genetic factors",
+                "low_treatment": "Address underlying cause, nutritional support",
+                "high_symptoms": "Bone pain, fatigue, jaundice, abdominal pain",
+                "high_causes": "Liver disease, bone problems, pregnancy, certain medications",
+                "high_treatment": "Address underlying cause, medications, dietary changes"
             },
             {
                 "marker": "hemoglobin",
                 "description": "Hemoglobin carries oxygen in red blood cells throughout the body.",
-                "normal_range": "12-16 g/dL for women, 14-18 g/dL for men",
-                "low_symptoms": "Fatigue, weakness, shortness of breath, pale skin",
+                "normal_range": "12-18 g/dL",
+                "low_symptoms": "Fatigue, weakness, shortness of breath, pale skin, dizziness",
                 "low_causes": "Iron deficiency, blood loss, chronic disease, bone marrow problems",
-                "low_treatment": "Address underlying cause, iron supplements, blood transfusion if needed",
+                "low_treatment": "Iron supplements, blood transfusions, address underlying cause",
                 "high_symptoms": "Headache, dizziness, fatigue, vision problems",
-                "high_causes": "Dehydration, lung disease, bone marrow disorders",
-                "high_treatment": "Address underlying cause, hydration, phlebotomy if needed"
+                "high_causes": "Dehydration, lung disease, bone marrow disorders, high altitude",
+                "high_treatment": "Address underlying cause, phlebotomy, medications"
             },
             {
                 "marker": "hematocrit",
-                "description": "Hematocrit measures the percentage of red blood cells in blood.",
-                "normal_range": "36-46% for women, 41-50% for men",
+                "description": "Hematocrit measures the percentage of red blood cells in blood volume.",
+                "normal_range": "36-50%",
                 "low_symptoms": "Fatigue, weakness, shortness of breath, pale skin",
-                "low_causes": "Anemia, blood loss, chronic disease, nutritional deficiencies",
-                "low_treatment": "Address underlying cause, iron supplements, blood transfusion if needed",
+                "low_causes": "Anemia, blood loss, chronic disease, bone marrow problems",
+                "low_treatment": "Iron supplements, blood transfusions, address underlying cause",
                 "high_symptoms": "Headache, dizziness, fatigue, vision problems",
-                "high_causes": "Dehydration, lung disease, bone marrow disorders",
-                "high_treatment": "Address underlying cause, hydration, phlebotomy if needed"
+                "high_causes": "Dehydration, lung disease, bone marrow disorders, high altitude",
+                "high_treatment": "Address underlying cause, phlebotomy, medications"
             },
             {
                 "marker": "wbc",
@@ -330,72 +335,39 @@ class RAGManager:
                 "normal_range": "4.5-11.0 K/μL",
                 "low_symptoms": "Frequent infections, fatigue, fever",
                 "low_causes": "Viral infections, bone marrow problems, medications, autoimmune disease",
-                "low_treatment": "Address underlying cause, infection prevention, growth factors if needed",
-                "high_symptoms": "Fever, fatigue, infection symptoms",
-                "high_causes": "Bacterial infection, inflammation, stress, leukemia",
-                "high_treatment": "Address underlying cause, antibiotics if infection"
+                "low_treatment": "Address underlying cause, medications, bone marrow transplant",
+                "high_symptoms": "Fever, fatigue, pain, infection symptoms",
+                "high_causes": "Infection, inflammation, stress, medications, bone marrow disorders",
+                "high_treatment": "Address underlying cause, antibiotics, medications"
             },
             {
                 "marker": "platelets",
                 "description": "Platelets are essential for blood clotting and wound healing.",
                 "normal_range": "150-450 K/μL",
-                "low_symptoms": "Easy bruising, bleeding, petechiae",
+                "low_symptoms": "Easy bruising, bleeding, petechiae, fatigue",
                 "low_causes": "Viral infections, medications, autoimmune disease, bone marrow problems",
-                "low_treatment": "Address underlying cause, platelet transfusion if needed",
-                "high_symptoms": "Usually asymptomatic, may cause blood clots",
-                "high_causes": "Inflammation, infection, cancer, bone marrow disorders",
-                "high_treatment": "Address underlying cause, blood thinners if needed"
-            },
-            {
-                "marker": "rdw",
-                "description": "Red Cell Distribution Width measures variation in red blood cell size.",
-                "normal_range": "11.5-14.5%",
-                "high_symptoms": "Usually asymptomatic, may indicate anemia",
-                "high_causes": "Iron deficiency, vitamin B12 deficiency, folate deficiency",
-                "high_treatment": "Address underlying cause, nutritional supplements",
-                "low_symptoms": "Usually asymptomatic",
-                "low_causes": "Usually not clinically significant",
-                "low_treatment": "Usually no treatment needed"
-            },
-            {
-                "marker": "mcv",
-                "description": "Mean Corpuscular Volume measures average red blood cell size.",
-                "normal_range": "80-100 fL",
-                "low_symptoms": "Fatigue, weakness, shortness of breath",
-                "low_causes": "Iron deficiency, thalassemia, chronic disease",
-                "low_treatment": "Address underlying cause, iron supplements",
-                "high_symptoms": "Fatigue, weakness, neurological symptoms",
-                "high_causes": "Vitamin B12 deficiency, folate deficiency, liver disease",
-                "high_treatment": "Address underlying cause, vitamin supplements"
-            },
-            {
-                "marker": "mch",
-                "description": "Mean Corpuscular Hemoglobin measures average hemoglobin per red blood cell.",
-                "normal_range": "27-32 pg",
-                "low_symptoms": "Fatigue, weakness, shortness of breath",
-                "low_causes": "Iron deficiency, thalassemia, chronic disease",
-                "low_treatment": "Address underlying cause, iron supplements",
-                "high_symptoms": "Fatigue, weakness, neurological symptoms",
-                "high_causes": "Vitamin B12 deficiency, folate deficiency",
-                "high_treatment": "Address underlying cause, vitamin supplements"
-            },
-            {
-                "marker": "mchc",
-                "description": "Mean Corpuscular Hemoglobin Concentration measures hemoglobin concentration in red blood cells.",
-                "normal_range": "32-36 g/dL",
-                "low_symptoms": "Fatigue, weakness, shortness of breath",
-                "low_causes": "Iron deficiency, thalassemia, chronic disease",
-                "low_treatment": "Address underlying cause, iron supplements",
-                "high_symptoms": "Usually asymptomatic",
-                "high_causes": "Hereditary spherocytosis, dehydration",
-                "high_treatment": "Address underlying cause"
+                "low_treatment": "Address underlying cause, platelet transfusions, medications",
+                "high_symptoms": "Blood clots, headache, chest pain, stroke symptoms",
+                "high_causes": "Inflammation, infection, bone marrow disorders, medications",
+                "high_treatment": "Address underlying cause, blood thinners, medications"
             }
         ]
         
-        # Add medical knowledge to vector database
-        for knowledge in medical_knowledge:
-            self.add_medical_knowledge(knowledge)
-    
+        # Store in memory for fallback
+        self.medical_knowledge = medical_knowledge
+        
+        # Index in vector database if available
+        if hasattr(self, 'medical_knowledge_collection'):
+            try:
+                for i, knowledge in enumerate(medical_knowledge):
+                    self.medical_knowledge_collection.add(
+                        documents=[f"{knowledge['marker']}: {knowledge['description']} Normal range: {knowledge['normal_range']}"],
+                        metadatas=[knowledge],
+                        ids=[f"medical_{i}"]
+                    )
+            except Exception as e:
+                print(f"Failed to index medical knowledge: {e}")
+
     def _initialize_medical_knowledge_fallback(self) -> Dict[str, Any]:
         """Initialize medical knowledge for fallback mode."""
         return {
@@ -865,6 +837,47 @@ class RAGManager:
                 return {"min": 0, "max": 100}
             else:
                 return {"min": 0, "max": value * 2}
+
+    def _generate_marker_knowledge(self, marker_name: str, value: float, status: str) -> Dict[str, Any]:
+        """Dynamically generate knowledge for unknown markers based on patterns."""
+        marker_lower = marker_name.lower()
+        
+        # Generate basic knowledge structure
+        knowledge = {
+            "marker": marker_name,
+            "description": f"{marker_name} is a health marker that your doctor uses to assess your overall health status.",
+            "normal_range": "Consult your healthcare provider for normal ranges",
+            "status": status,
+            "value": value
+        }
+        
+        # Add specific knowledge based on marker patterns
+        if any(word in marker_lower for word in ["vitamin", "vit"]):
+            knowledge["description"] = f"{marker_name} is a vitamin essential for various bodily functions."
+            knowledge["low_treatment"] = f"Increase {marker_name} intake through diet and supplements under medical supervision."
+            knowledge["high_treatment"] = f"Reduce {marker_name} supplementation and consult your healthcare provider."
+        
+        elif any(word in marker_lower for word in ["mineral", "calcium", "magnesium", "zinc", "iron", "copper", "selenium"]):
+            knowledge["description"] = f"{marker_name} is a mineral essential for various bodily functions."
+            knowledge["low_treatment"] = f"Increase {marker_name} intake through diet and supplements under medical supervision."
+            knowledge["high_treatment"] = f"Reduce {marker_name} intake and consult your healthcare provider."
+        
+        elif any(word in marker_lower for word in ["enzyme", "alt", "ast", "alkaline", "phosphatase"]):
+            knowledge["description"] = f"{marker_name} is an enzyme that indicates organ function and health."
+            knowledge["low_treatment"] = f"Address underlying causes and consult your healthcare provider."
+            knowledge["high_treatment"] = f"Address underlying causes and consult your healthcare provider."
+        
+        elif any(word in marker_lower for word in ["protein", "albumin", "globulin"]):
+            knowledge["description"] = f"{marker_name} is a protein that plays important roles in bodily functions."
+            knowledge["low_treatment"] = f"Increase protein intake and address underlying causes."
+            knowledge["high_treatment"] = f"Address underlying causes and consult your healthcare provider."
+        
+        elif any(word in marker_lower for word in ["hormone", "thyroid", "insulin", "cortisol"]):
+            knowledge["description"] = f"{marker_name} is a hormone that regulates various bodily processes."
+            knowledge["low_treatment"] = f"Hormone replacement therapy may be needed under medical supervision."
+            knowledge["high_treatment"] = f"Medications or surgery may be needed under medical supervision."
+        
+        return knowledge
 
 # Global RAG manager instance
 rag_manager = RAGManager()

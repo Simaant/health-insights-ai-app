@@ -17,12 +17,34 @@ def _get_model():
 
 def run_agent(prompt: str, markers: Optional[List[Dict[str, Any]]] = None, chat_history: Optional[List[Dict[str, str]]] = None, user_id: Optional[str] = None) -> str:
     """
-    Enhanced intelligent AI agent with RAG capabilities that understands context and provides personalized responses.
+    Enhanced intelligent AI agent with RAG + LLM capabilities that understands context and provides personalized responses.
     """
     # Normalize the prompt
     prompt_lower = prompt.lower().strip()
     
-    # Use RAG to retrieve relevant context if user_id is provided
+    # If we have markers, try LLM first for ALL questions
+    if markers and len(markers) > 0:
+        try:
+            # Create a simple context for LLM
+            context = {
+                "user_markers": {"documents": []},
+                "medical_knowledge": {"documents": []},
+                "chat_history": {"documents": []}
+            }
+            
+            # Try LLM-enhanced response first
+            llm_response = _generate_llm_enhanced_response(prompt, markers, chat_history, context, user_id or "default")
+            if llm_response and len(llm_response.strip()) > 20:
+                return llm_response
+        except Exception as e:
+            print(f"LLM error: {e}")
+            # Fallback to rule-based
+            pass
+        
+        # If LLM fails, use rule-based system
+        return _generate_intelligent_response(markers, prompt, chat_history)
+    
+    # Use RAG to retrieve relevant context if user_id is provided (for questions without markers)
     if user_id:
         try:
             # Index current markers and chat history for future retrieval
@@ -35,6 +57,16 @@ def run_agent(prompt: str, markers: Optional[List[Dict[str, Any]]] = None, chat_
             # Retrieve relevant context using RAG
             context = rag_manager.retrieve_relevant_context(user_id, prompt)
             
+            # Try LLM-enhanced response first
+            try:
+                llm_response = _generate_llm_enhanced_response(prompt, markers, chat_history, context, user_id)
+                if llm_response and len(llm_response.strip()) > 50:  # Ensure meaningful response
+                    return llm_response
+            except Exception as e:
+                print(f"LLM error: {e}")
+                # Fallback to RAG-enhanced response
+                pass
+            
             # Generate response using RAG-enhanced context
             return _generate_rag_enhanced_response(prompt, markers, chat_history, context, user_id)
             
@@ -43,16 +75,169 @@ def run_agent(prompt: str, markers: Optional[List[Dict[str, Any]]] = None, chat_
             # Fallback to original method if RAG fails
             pass
     
-    # If we have markers, provide context-aware responses FIRST
-    if markers and len(markers) > 0:
-        return _generate_intelligent_response(markers, prompt, chat_history)
-    
     # Check if this is a general health question that doesn't relate to uploaded markers
     if _is_general_health_question(prompt_lower):
         return _handle_general_health_questions(prompt, chat_history)
     
     # Handle general health questions without specific marker data
     return _handle_general_health_questions(prompt, chat_history)
+
+def _generate_llm_enhanced_response(prompt: str, markers: Optional[List[Dict[str, Any]]], chat_history: Optional[List[Dict[str, str]]], context: Dict[str, Any], user_id: str) -> str:
+    """Generate LLM-enhanced responses using Flan-T5 with RAG context."""
+    try:
+        from transformers import pipeline
+        
+        # Initialize the model (lazy loading)
+        if not hasattr(_generate_llm_enhanced_response, 'model'):
+            _generate_llm_enhanced_response.model = pipeline("text2text-generation", model="google/flan-t5-large")
+        
+        # Build context for the LLM
+        context_str = _build_llm_context(prompt, markers, chat_history, context)
+        
+        # Create a more specific prompt for the LLM
+        llm_prompt = f"""Based on the health information below, provide a clear and helpful response to the user's question about their health markers.
+
+Health Information:
+{context_str}
+
+Question: {prompt}
+
+Provide a concise, accurate response with specific recommendations. Focus on practical advice and avoid repetition:"""
+
+        # Generate response with better parameters
+        response = _generate_llm_enhanced_response.model(
+            llm_prompt, 
+            max_new_tokens=256,  # Use max_new_tokens instead of max_length
+            do_sample=True, 
+            temperature=0.3,  # Lower temperature for more focused responses
+            top_p=0.9,
+            repetition_penalty=1.2  # Prevent repetition
+        )
+        generated_text = response[0]["generated_text"]
+        
+        # Clean and format the response
+        cleaned_response = _clean_llm_response(generated_text)
+        
+        # Validate response quality
+        if len(cleaned_response.strip()) < 20:
+            print(f"LLM response too short ({len(cleaned_response.strip())} chars), falling back to rule-based")
+            return None
+        
+        # Check for repetitive patterns but be less strict
+        if "such as" in cleaned_response.lower() and cleaned_response.lower().count("such as") > 3:
+            print("LLM response too repetitive, falling back to rule-based")
+            return None
+            
+        # Add debugging to see what responses are being generated
+        print(f"LLM generated response: {cleaned_response[:100]}...")
+            
+        return cleaned_response
+        
+    except Exception as e:
+        print(f"LLM generation failed: {e}")
+        return None
+
+def _build_llm_context(prompt: str, markers: Optional[List[Dict[str, Any]]], chat_history: Optional[List[Dict[str, str]]], context: Dict[str, Any]) -> str:
+    """Build context string for LLM from RAG results and user data."""
+    context_parts = []
+    
+    # Add user's markers
+    if markers:
+        context_parts.append("User's Health Markers:")
+        for marker in markers:
+            name = marker.get("name", "")
+            value = marker.get("value", "")
+            unit = marker.get("unit", "")
+            status = marker.get("status", "")
+            normal_range = marker.get("normalRange", "")
+            context_parts.append(f"- {name}: {value} {unit} ({status}) - Normal range: {normal_range}")
+    
+    # Add medical knowledge for the specific markers
+    if markers:
+        context_parts.append("\nMedical Knowledge:")
+        for marker in markers:
+            marker_name = marker.get("name", "").lower()
+            status = marker.get("status", "")
+            
+            # Add specific medical knowledge based on marker type
+            if "selenium" in marker_name:
+                if status == "low":
+                    context_parts.append("- Selenium is an antioxidant that supports thyroid function and immune health.")
+                    context_parts.append("- Low selenium symptoms: muscle weakness, fatigue, thyroid problems, immune issues")
+                    context_parts.append("- Selenium-rich foods: Brazil nuts, fish, meat, eggs")
+                elif status == "high":
+                    context_parts.append("- High selenium symptoms: hair loss, nail changes, gastrointestinal issues")
+            
+            elif "calcium" in marker_name:
+                if status == "low":
+                    context_parts.append("- Calcium is essential for bone health, muscle function, and nerve transmission.")
+                    context_parts.append("- Low calcium symptoms: muscle cramps, numbness, tingling, bone pain, fatigue")
+                    context_parts.append("- Calcium-rich foods: dairy products, leafy greens, nuts, seeds")
+                elif status == "high":
+                    context_parts.append("- High calcium symptoms: nausea, vomiting, confusion, muscle weakness, kidney stones")
+            
+            elif "magnesium" in marker_name:
+                if status == "low":
+                    context_parts.append("- Magnesium is involved in over 300 enzymatic reactions and is essential for muscle and nerve function.")
+                    context_parts.append("- Low magnesium symptoms: muscle cramps, fatigue, weakness, irregular heartbeat, anxiety")
+                    context_parts.append("- Magnesium-rich foods: green leafy greens, nuts, seeds, legumes, whole grains")
+                elif status == "high":
+                    context_parts.append("- High magnesium symptoms: nausea, vomiting, muscle weakness, irregular heartbeat")
+            
+            elif "zinc" in marker_name:
+                if status == "low":
+                    context_parts.append("- Zinc is essential for immune function, wound healing, and protein synthesis.")
+                    context_parts.append("- Low zinc symptoms: frequent infections, slow wound healing, hair loss, taste changes")
+                    context_parts.append("- Zinc-rich foods: meat, shellfish, legumes, nuts")
+                elif status == "high":
+                    context_parts.append("- High zinc symptoms: nausea, vomiting, diarrhea, copper deficiency")
+            
+            elif "vitamin" in marker_name:
+                if status == "low":
+                    context_parts.append(f"- {marker.get('name')} is a vitamin essential for various bodily functions.")
+                    context_parts.append(f"- Low {marker.get('name')} symptoms: fatigue, weakness, immune issues")
+                    context_parts.append(f"- {marker.get('name')}-rich foods: varies by vitamin type")
+                elif status == "high":
+                    context_parts.append(f"- High {marker.get('name')} symptoms: usually asymptomatic, may indicate underlying condition")
+    
+    # Add RAG medical knowledge if available
+    medical_knowledge = context.get("medical_knowledge", {})
+    if medical_knowledge and medical_knowledge.get("documents"):
+        context_parts.append("\nAdditional Medical Knowledge:")
+        for doc in medical_knowledge["documents"][:2]:  # Limit to top 2
+            context_parts.append(f"- {doc}")
+    
+    # Add chat history context (more comprehensive)
+    if chat_history:
+        context_parts.append("\nRecent Conversation:")
+        # Include more context - last 4 messages instead of 2
+        recent_messages = chat_history[-4:]  # Last 4 messages
+        for msg in recent_messages:
+            role = msg.get("role", "")
+            content = msg.get("content", "")
+            # Include more content for better context
+            context_parts.append(f"- {role}: {content[:150]}...")
+    
+    return "\n".join(context_parts)
+
+def _clean_llm_response(response: str) -> str:
+    """Clean and format LLM response."""
+    # Remove any prompt artifacts
+    if "User Question:" in response:
+        response = response.split("User Question:")[0]
+    
+    # Ensure proper formatting
+    response = response.strip()
+    
+    # Add emojis and formatting if missing
+    if "food" in response.lower() and "🍎" not in response:
+        response = "🍎 " + response
+    elif "lifestyle" in response.lower() and "🏃‍♂️" not in response:
+        response = "🏃‍♂️ " + response
+    elif "supplement" in response.lower() and "💊" not in response:
+        response = "💊 " + response
+    
+    return response
 
 def _generate_rag_enhanced_response(prompt: str, markers: Optional[List[Dict[str, Any]]], chat_history: Optional[List[Dict[str, str]]], context: Dict[str, Any], user_id: str) -> str:
     """Generate RAG-enhanced responses using retrieved context."""
@@ -157,6 +342,10 @@ def _generate_intelligent_response(markers: List[Dict[str, Any]], user_prompt: s
     abnormal_markers = [m for m in markers if m.get("status") != "normal"]
     normal_markers = [m for m in markers if m.get("status") == "normal"]
     
+    # Check for follow-up questions first if there's chat history
+    if chat_history and _is_followup_question(prompt_lower, chat_history):
+        return _handle_followup_question(markers, user_prompt, chat_history)
+    
     # Check for specific question types (order matters - more specific first)
     if _is_doctor_question(prompt_lower):
         return _handle_doctor_question(markers, user_prompt)
@@ -176,9 +365,6 @@ def _generate_intelligent_response(markers: List[Dict[str, Any]], user_prompt: s
     if _is_specific_marker_question(prompt_lower, markers):
         return _handle_specific_marker_question(markers, user_prompt)
     
-    if _is_followup_question(prompt_lower, chat_history):
-        return _handle_followup_question(markers, user_prompt, chat_history)
-    
     # Default comprehensive response
     return _generate_comprehensive_marker_response(markers, user_prompt)
 
@@ -187,7 +373,10 @@ def _is_followup_question(prompt: str, chat_history: Optional[List[Dict[str, str
     followup_indicators = [
         "what about", "how about", "what if", "can you explain", "tell me more",
         "what does this mean", "why", "how", "when", "where", "which",
-        "is this serious", "should i worry", "is this normal", "what next"
+        "is this serious", "should i worry", "is this normal", "what next",
+        "lifestyle", "exercise", "workout", "activity", "sleep", "stress",
+        "what else", "anything else", "other", "additional", "more",
+        "should i take", "do i need", "supplement", "vitamin", "pill", "medication", "medicine"
     ]
     return any(indicator in prompt for indicator in followup_indicators)
 
@@ -284,6 +473,18 @@ def _handle_followup_question(markers: List[Dict[str, Any]], user_prompt: str, c
     # Analyze chat history to understand context
     context = _analyze_chat_context(chat_history, markers)
     
+    # Check for food/diet related follow-up questions first
+    if any(word in prompt_lower for word in ["food", "eat", "diet", "nutrition", "meal", "snack"]):
+        return _handle_food_question(markers, user_prompt)
+    
+    # Check for lifestyle related follow-up questions
+    if any(word in prompt_lower for word in ["lifestyle", "exercise", "workout", "activity", "sleep", "stress"]):
+        return _handle_lifestyle_question(markers, user_prompt)
+    
+    # Check for supplement related follow-up questions
+    if any(word in prompt_lower for word in ["supplement", "vitamin", "pill", "medication", "medicine"]):
+        return _handle_supplement_question(markers, user_prompt)
+    
     # Check for specific follow-up patterns
     if "what about" in prompt_lower or "how about" in prompt_lower:
         # Extract the specific topic they're asking about
@@ -291,7 +492,7 @@ def _handle_followup_question(markers: List[Dict[str, Any]], user_prompt: str, c
             return _get_detailed_ferritin_info(markers)
         elif "cholesterol" in prompt_lower:
             return _get_detailed_cholesterol_info(markers)
-        elif "glucose" in prompt_lower or "blood sugar" in prompt_lower:
+        elif "glucose" in prompt_lower or "blood sugar" in prompt_lower or "hba1c" in prompt_lower or "a1c" in prompt_lower:
             return _get_detailed_glucose_info(markers)
         elif "thyroid" in prompt_lower or "tsh" in prompt_lower:
             return _get_detailed_thyroid_info(markers)
@@ -311,6 +512,13 @@ def _handle_followup_question(markers: List[Dict[str, Any]], user_prompt: str, c
     
     if context.get("previous_topic") == "diet" and ("supplement" in prompt_lower or "vitamin" in prompt_lower):
         return _handle_supplement_question(markers, user_prompt)
+    
+    # If we have context about a specific marker, provide targeted advice
+    if context.get("mentioned_markers"):
+        for marker_name in context["mentioned_markers"]:
+            for marker in markers:
+                if marker.get("name", "").lower() == marker_name:
+                    return _get_marker_specific_response(marker, user_prompt)
     
     return _generate_comprehensive_marker_response(markers, user_prompt)
 
@@ -356,6 +564,7 @@ def _handle_supplement_question(markers: List[Dict[str, Any]], user_prompt: str)
     # Check for specific deficiencies
     iron_deficient = any(m.get("name", "").lower() in ["ferritin", "iron"] and m.get("status") == "low" for m in markers)
     vitamin_d_deficient = any(m.get("name", "").lower() in ["vitamin d", "25-oh vitamin d"] and m.get("status") in ["low", "deficient"] for m in markers)
+    magnesium_deficient = any(m.get("name", "").lower() in ["magnesium"] and m.get("status") == "low" for m in markers)
     
     if iron_deficient:
         return ("## 💊 Iron Supplement Recommendations\n\n"
@@ -376,13 +585,188 @@ def _handle_supplement_question(markers: List[Dict[str, Any]], user_prompt: str)
                 "• **Monitor:** Retest levels after 3-6 months\n\n"
                 "**Important:** Always consult your healthcare provider before starting supplements.")
     
+    if magnesium_deficient:
+        return ("## 💊 Magnesium Supplement Recommendations\n\n"
+                "**For Low Magnesium Levels:**\n"
+                "• **Magnesium Forms:** Magnesium citrate, glycinate, or oxide\n"
+                "• **Dosage:** 200-400mg daily (consult your doctor)\n"
+                "• **Timing:** Take with meals to reduce stomach upset\n"
+                "• **Best Time:** Evening for better sleep benefits\n"
+                "• **Avoid:** High doses without medical supervision\n\n"
+                "**Important:** Always consult your healthcare provider before starting supplements.")
+    
     return ("## 💊 General Supplement Guidelines\n\n"
-            "**Before Taking Supplements:**\n"
-            "• **Consult Your Doctor:** Always get medical advice first\n"
-            "• **Get Tested:** Know your current levels before supplementing\n"
-            "• **Quality Matters:** Choose reputable brands\n"
-            "• **Monitor Progress:** Retest levels periodically\n\n"
-            "**Remember:** Supplements are not a substitute for a balanced diet.")
+            "**Before Starting Supplements:**\n"
+            "• **Consult your doctor** for personalized recommendations\n"
+            "• **Get proper testing** to identify specific deficiencies\n"
+            "• **Start with one supplement** at a time\n"
+            "• **Monitor for side effects** and interactions\n\n"
+            "**Quality Considerations:**\n"
+            "• **Choose reputable brands** with third-party testing\n"
+            "• **Check expiration dates** and storage requirements\n"
+            "• **Follow dosage instructions** carefully")
+
+def _handle_lifestyle_question(markers: List[Dict[str, Any]], user_prompt: str) -> str:
+    """Handle lifestyle-related questions."""
+    prompt_lower = user_prompt.lower()
+    abnormal_markers = [m for m in markers if m.get("status") != "normal"]
+    
+    # Check for specific marker-related lifestyle advice
+    for marker in abnormal_markers:
+        marker_name = marker.get("name", "").lower()
+        status = marker.get("status", "").lower()
+        
+        if "hba1c" in marker_name or "glycated" in marker_name or "a1c" in marker_name:
+            if status == "high":
+                return _get_diabetes_lifestyle_advice()
+        
+        elif "cholesterol" in marker_name:
+            if status == "high":
+                return _get_high_cholesterol_lifestyle_advice()
+        
+        elif "ferritin" in marker_name or "iron" in marker_name:
+            if status == "low":
+                return _get_iron_lifestyle_advice()
+        
+        elif "magnesium" in marker_name:
+            if status == "low":
+                return _get_magnesium_lifestyle_advice()
+        
+        elif "calcium" in marker_name:
+            if status == "low":
+                return _get_calcium_lifestyle_advice()
+    
+    # General lifestyle advice
+    return _get_general_lifestyle_advice()
+
+def _get_diabetes_lifestyle_advice() -> str:
+    """Get lifestyle advice for diabetes management."""
+    return ("🏃‍♂️ **Lifestyle Changes for Diabetes Management**\n\n"
+            "**Exercise Recommendations:**\n"
+            "• **Aerobic Exercise:** 150 minutes/week (walking, swimming, cycling)\n"
+            "• **Strength Training:** 2-3 sessions/week\n"
+            "• **Daily Activity:** Aim for 10,000 steps\n\n"
+            "**Stress Management:**\n"
+            "• **Meditation:** 10-15 minutes daily\n"
+            "• **Deep Breathing:** Practice regularly\n"
+            "• **Adequate Sleep:** 7-9 hours nightly\n\n"
+            "**Weight Management:**\n"
+            "• **Gradual Weight Loss:** 1-2 pounds per week\n"
+            "• **Portion Control:** Use smaller plates\n"
+            "• **Regular Meals:** Don't skip meals\n\n"
+            "**Monitoring:**\n"
+            "• **Blood Sugar:** Check as recommended by your doctor\n"
+            "• **Foot Care:** Daily inspection and proper footwear\n"
+            "• **Regular Check-ups:** Every 3-6 months")
+
+def _get_high_cholesterol_lifestyle_advice() -> str:
+    """Get lifestyle advice for high cholesterol."""
+    return ("🏃‍♂️ **Lifestyle Changes for High Cholesterol**\n\n"
+            "**Exercise Recommendations:**\n"
+            "• **Cardiovascular Exercise:** 150 minutes/week\n"
+            "• **Moderate Intensity:** Brisk walking, cycling, swimming\n"
+            "• **Consistency:** Exercise most days of the week\n\n"
+            "**Weight Management:**\n"
+            "• **Healthy Weight:** Maintain BMI 18.5-24.9\n"
+            "• **Waist Circumference:** < 40 inches (men), < 35 inches (women)\n"
+            "• **Gradual Changes:** Sustainable lifestyle modifications\n\n"
+            "**Stress Management:**\n"
+            "• **Relaxation Techniques:** Yoga, meditation, deep breathing\n"
+            "• **Adequate Sleep:** 7-9 hours nightly\n"
+            "• **Social Support:** Connect with friends and family\n\n"
+            "**Avoid Smoking:**\n"
+            "• **Quit Smoking:** Seek support if needed\n"
+            "• **Avoid Secondhand Smoke:** Limit exposure")
+
+def _get_iron_lifestyle_advice() -> str:
+    """Get lifestyle advice for iron deficiency."""
+    return ("🏃‍♂️ **Lifestyle Changes for Iron Deficiency**\n\n"
+            "**Exercise Considerations:**\n"
+            "• **Moderate Exercise:** Avoid over-exertion initially\n"
+            "• **Gradual Increase:** Build up activity as energy improves\n"
+            "• **Listen to Your Body:** Rest when needed\n\n"
+            "**Sleep and Recovery:**\n"
+            "• **Adequate Sleep:** 7-9 hours nightly\n"
+            "• **Quality Sleep:** Maintain regular sleep schedule\n"
+            "• **Rest Periods:** Allow time for recovery\n\n"
+            "**Stress Management:**\n"
+            "• **Reduce Stress:** Practice relaxation techniques\n"
+            "• **Pace Yourself:** Don't overcommit\n"
+            "• **Seek Support:** Talk to friends, family, or counselor\n\n"
+            "**Energy Conservation:**\n"
+            "• **Prioritize Tasks:** Focus on important activities\n"
+            "• **Take Breaks:** Regular rest periods throughout the day\n"
+            "• **Delegate:** Ask for help when needed")
+
+def _get_magnesium_lifestyle_advice() -> str:
+    """Get lifestyle advice for magnesium deficiency."""
+    return ("🏃‍♂️ **Lifestyle Changes for Magnesium Deficiency**\n\n"
+            "**Exercise Considerations:**\n"
+            "• **Moderate Exercise:** Start with gentle activities\n"
+            "• **Gradual Increase:** Build up activity as energy improves\n"
+            "• **Listen to Your Body:** Rest when needed\n\n"
+            "**Sleep and Recovery:**\n"
+            "• **Adequate Sleep:** 7-9 hours nightly\n"
+            "• **Quality Sleep:** Maintain regular sleep schedule\n"
+            "• **Rest Periods:** Allow time for recovery\n\n"
+            "**Stress Management:**\n"
+            "• **Reduce Stress:** Practice relaxation techniques\n"
+            "• **Pace Yourself:** Don't overcommit\n"
+            "• **Seek Support:** Talk to friends, family, or counselor\n\n"
+            "**Energy Conservation:**\n"
+            "• **Prioritize Tasks:** Focus on important activities\n"
+            "• **Take Breaks:** Regular rest periods throughout the day\n"
+            "• **Delegate:** Ask for help when needed\n\n"
+            "**Dietary Considerations:**\n"
+            "• **Eat Regular Meals:** Don't skip meals\n"
+            "• **Stay Hydrated:** Drink plenty of water\n"
+            "• **Limit Alcohol:** Can deplete magnesium levels")
+
+def _get_calcium_lifestyle_advice() -> str:
+    """Get lifestyle advice for calcium deficiency."""
+    return ("🏃‍♂️ **Lifestyle Changes for Calcium Deficiency**\n\n"
+            "**Exercise Recommendations:**\n"
+            "• **Weight-Bearing Exercise:** Walking, jogging, dancing\n"
+            "• **Strength Training:** Helps build and maintain bone density\n"
+            "• **Moderate Activity:** 150 minutes/week\n"
+            "• **Avoid High-Impact:** If you have osteoporosis risk\n\n"
+            "**Sunlight Exposure:**\n"
+            "• **Vitamin D Production:** 10-15 minutes daily sun exposure\n"
+            "• **Best Time:** Morning or late afternoon\n"
+            "• **Skin Protection:** Don't overexpose\n\n"
+            "**Dietary Habits:**\n"
+            "• **Regular Meals:** Include calcium-rich foods\n"
+            "• **Vitamin D Foods:** Fatty fish, eggs, fortified foods\n"
+            "• **Limit Caffeine:** Can interfere with calcium absorption\n"
+            "• **Reduce Salt:** High sodium can increase calcium loss\n\n"
+            "**Bone Health:**\n"
+            "• **Fall Prevention:** Remove trip hazards at home\n"
+            "• **Good Posture:** Maintain proper alignment\n"
+            "• **Regular Check-ups:** Monitor bone density if needed")
+
+def _get_general_lifestyle_advice() -> str:
+    """Get general healthy lifestyle advice."""
+    return ("🏃‍♂️ **General Healthy Lifestyle Guidelines**\n\n"
+            "**Physical Activity:**\n"
+            "• **Aerobic Exercise:** 150 minutes/week moderate intensity\n"
+            "• **Strength Training:** 2-3 sessions/week\n"
+            "• **Flexibility:** Stretching exercises regularly\n"
+            "• **Daily Movement:** Aim for 10,000 steps\n\n"
+            "**Sleep Hygiene:**\n"
+            "• **Consistent Schedule:** Same bedtime and wake time\n"
+            "• **Sleep Environment:** Cool, dark, quiet room\n"
+            "• **Screen Time:** Avoid screens 1 hour before bed\n"
+            "• **Duration:** 7-9 hours nightly\n\n"
+            "**Stress Management:**\n"
+            "• **Mindfulness:** Meditation or deep breathing\n"
+            "• **Social Connections:** Maintain relationships\n"
+            "• **Hobbies:** Engage in enjoyable activities\n"
+            "• **Professional Help:** Seek counseling if needed\n\n"
+            "**Healthy Habits:**\n"
+            "• **Regular Check-ups:** Annual physical exams\n"
+            "• **Preventive Care:** Vaccinations and screenings\n"
+            "• **Avoid Smoking:** Don't start, quit if you do\n"
+            "• **Limit Alcohol:** Moderate consumption only")
 
 def _handle_specific_marker_question(markers: List[Dict[str, Any]], user_prompt: str) -> str:
     """Handle questions about ANY specific marker - completely generalized."""
@@ -463,8 +847,30 @@ def _handle_food_question(markers: List[Dict[str, Any]], user_prompt: str) -> st
     mentioned_markers = []
     for marker in markers:
         marker_name = marker.get("name", "").lower()
+        marker_name_clean = marker_name.replace(" ", "").replace("-", "").replace("_", "")
+        
+        # Check for exact match
         if marker_name in prompt_lower:
             mentioned_markers.append(marker)
+            continue
+        
+        # Check for cleaned name match (handles HBA1C vs H1bA1C)
+        if marker_name_clean in prompt_lower.replace(" ", "").replace("-", "").replace("_", ""):
+            mentioned_markers.append(marker)
+            continue
+        
+        # Check for partial matches for common variations
+        if "hba1c" in marker_name and ("hba1c" in prompt_lower or "h1ba1c" in prompt_lower or "a1c" in prompt_lower):
+            mentioned_markers.append(marker)
+            continue
+        
+        if "cholesterol" in marker_name and "cholesterol" in prompt_lower:
+            mentioned_markers.append(marker)
+            continue
+        
+        if "ferritin" in marker_name and ("ferritin" in prompt_lower or "iron" in prompt_lower):
+            mentioned_markers.append(marker)
+            continue
     
     # If specific markers are mentioned, prioritize those
     if mentioned_markers:
@@ -517,7 +923,7 @@ def _handle_food_question(markers: List[Dict[str, Any]], user_prompt: str) -> st
             return "\n\n".join(recommendations)
     
     # If no specific markers mentioned, check for general food-related keywords
-    if any(word in prompt_lower for word in ["diabetes", "blood sugar", "glucose", "hba1c", "a1c"]):
+    if any(word in prompt_lower for word in ["diabetes", "blood sugar", "glucose", "hba1c", "h1ba1c", "a1c"]):
         return _get_diabetes_food_advice()
     
     if any(word in prompt_lower for word in ["cholesterol", "heart", "cardiovascular"]):
@@ -1723,7 +2129,13 @@ def _handle_food_question_enhanced(markers: Optional[List[Dict[str, Any]]], prom
         
         print(f"DEBUG: Target marker: {marker_name}, Status: {status}")
         
-        if "cholesterol" in marker_name:
+        if "hba1c" in marker_name or "glycated" in marker_name or "a1c" in marker_name:
+            if "high" in status:
+                return _get_diabetes_food_advice()
+            elif "low" in status:
+                return _get_hypoglycemia_food_advice()
+        
+        elif "cholesterol" in marker_name:
             if "low" in status:
                 return _get_cholesterol_food_advice_low()
             elif "high" in status:
@@ -1758,7 +2170,12 @@ def _handle_food_question_enhanced(markers: Optional[List[Dict[str, Any]]], prom
             
             # If user asks about foods and has abnormal markers, provide advice for those
             if status != "normal":
-                if "cholesterol" in marker_name:
+                if "hba1c" in marker_name or "glycated" in marker_name or "a1c" in marker_name:
+                    if "high" in status:
+                        return _get_diabetes_food_advice()
+                    elif "low" in status:
+                        return _get_hypoglycemia_food_advice()
+                elif "cholesterol" in marker_name:
                     if "low" in status:
                         return _get_cholesterol_food_advice_low()
                     elif "high" in status:
@@ -1772,6 +2189,28 @@ def _handle_food_question_enhanced(markers: Optional[List[Dict[str, Any]]], prom
                 elif "glucose" in marker_name or "blood sugar" in marker_name:
                     if "high" in status:
                         return _get_glucose_food_advice_high()
+                elif "calcium" in marker_name:
+                    if "low" in status:
+                        return _get_calcium_food_advice()
+                elif "magnesium" in marker_name:
+                    if "low" in status:
+                        return _get_magnesium_food_advice()
+    
+    # If no specific markers mentioned, check for general food-related keywords
+    if any(word in prompt_lower for word in ["diabetes", "blood sugar", "glucose", "hba1c", "h1ba1c", "a1c"]):
+        return _get_diabetes_food_advice()
+    
+    if any(word in prompt_lower for word in ["cholesterol", "heart", "cardiovascular"]):
+        return _get_high_cholesterol_food_advice()
+    
+    if any(word in prompt_lower for word in ["iron", "ferritin", "anemia"]):
+        return _get_iron_food_advice()
+    
+    if any(word in prompt_lower for word in ["calcium"]):
+        return _get_calcium_food_advice()
+    
+    if any(word in prompt_lower for word in ["magnesium"]):
+        return _get_magnesium_food_advice()
     
     # If no specific markers mentioned, provide general advice
     return _get_general_food_advice()
