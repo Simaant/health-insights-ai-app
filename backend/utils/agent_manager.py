@@ -95,14 +95,14 @@ def _generate_llm_enhanced_response(prompt: str, markers: Optional[List[Dict[str
         context_str = _build_llm_context(prompt, markers, chat_history, context)
         
         # Create a more specific prompt for the LLM
-        llm_prompt = f"""You are a medical AI assistant helping with health markers.
+        llm_prompt = f"""You are a medical AI assistant. Focus on the specific health markers mentioned.
 
 Health Information:
 {context_str}
 
 User Question: {prompt}
 
-Provide a helpful, specific response about the user's health markers. Focus on practical advice and be specific to the markers mentioned above."""
+Provide a specific response about the user's health markers:"""
 
         # Generate response with better parameters
         response = _generate_llm_enhanced_response.model(
@@ -151,7 +151,7 @@ Provide a helpful, specific response about the user's health markers. Focus on p
         return None
 
 def _build_llm_context(prompt: str, markers: Optional[List[Dict[str, Any]]], chat_history: Optional[List[Dict[str, str]]], context: Dict[str, Any]) -> str:
-    """Build context string for LLM from RAG results and user data."""
+    """Build context string for LLM from RAG results and user data with enhanced session awareness."""
     context_parts = []
     
     # Add user's markers with emphasis on current discussion
@@ -164,6 +164,17 @@ def _build_llm_context(prompt: str, markers: Optional[List[Dict[str, Any]]], cha
             status = marker.get("status", "")
             normal_range = marker.get("normalRange", "")
             context_parts.append(f"- {name}: {value} {unit} ({status}) - Normal range: {normal_range}")
+    
+    # Add session context if available
+    session_context = context.get("session_context", {})
+    if session_context:
+        active_markers = session_context.get("active_markers", [])
+        if active_markers:
+            context_parts.append(f"\nACTIVELY DISCUSSED MARKERS: {', '.join(active_markers)}")
+        
+        total_markers = session_context.get("total_markers", 0)
+        if total_markers > 0:
+            context_parts.append(f"\nTOTAL MARKERS IN SESSION: {total_markers}")
     
     # Add medical knowledge for the specific markers
     if markers:
@@ -218,6 +229,32 @@ def _build_llm_context(prompt: str, markers: Optional[List[Dict[str, Any]]], cha
                 elif status == "high":
                     context_parts.append(f"- High {marker.get('name')} symptoms: usually asymptomatic, may indicate underlying condition")
             
+            elif "ferritin" in marker_name or "iron" in marker_name:
+                if status == "low":
+                    context_parts.append("- Iron/Ferritin is essential for oxygen transport and energy production.")
+                    context_parts.append("- Low iron symptoms: fatigue, weakness, shortness of breath, pale skin, dizziness")
+                    context_parts.append("- Iron-rich foods: red meat, spinach, beans, fortified cereals, dark chocolate")
+                    context_parts.append("- Iron lifestyle: Include vitamin C with meals, avoid coffee/tea with iron foods")
+                elif status == "high":
+                    context_parts.append("- High iron symptoms: joint pain, fatigue, abdominal pain, heart problems")
+            
+            elif "cholesterol" in marker_name or "hdl" in marker_name or "ldl" in marker_name:
+                if status == "high" or (marker_name == "hdl" and status == "low"):
+                    context_parts.append("- Cholesterol is essential for cell membranes and hormone production.")
+                    context_parts.append("- High cholesterol symptoms: usually asymptomatic, may cause chest pain, heart disease")
+                    context_parts.append("- Cholesterol-friendly foods: oats, beans, fatty fish, nuts, olive oil")
+                    context_parts.append("- Cholesterol lifestyle: Exercise regularly, maintain healthy weight, quit smoking")
+            
+            elif "glucose" in marker_name or "hba1c" in marker_name or "a1c" in marker_name:
+                if status == "high":
+                    context_parts.append("- Glucose is the primary source of energy for cells and is regulated by insulin.")
+                    context_parts.append("- High glucose symptoms: increased thirst, frequent urination, fatigue, blurred vision")
+                    context_parts.append("- Glucose-friendly foods: whole grains, non-starchy vegetables, lean proteins")
+                    context_parts.append("- Glucose lifestyle: Regular exercise, weight management, stress reduction")
+                elif status == "low":
+                    context_parts.append("- Low glucose symptoms: shakiness, confusion, sweating, hunger, dizziness")
+                    context_parts.append("- Low glucose foods: complex carbs, regular meals, protein with carbs")
+            
             else:
                 # Generic knowledge for unknown markers
                 context_parts.append(f"- {marker.get('name')} is a health marker that your doctor uses to assess your overall health status.")
@@ -234,12 +271,12 @@ def _build_llm_context(prompt: str, markers: Optional[List[Dict[str, Any]]], cha
     # Add chat history context (more comprehensive)
     if chat_history:
         context_parts.append("\nRECENT CONVERSATION CONTEXT:")
-        # Include more context - last 4 messages instead of 2
+        # Include more context - last 4 messages instead of 6 to prevent token overflow
         recent_messages = chat_history[-4:]  # Last 4 messages
         for msg in recent_messages:
             role = msg.get("role", "")
             content = msg.get("content", "")
-            # Include more content for better context
+            # Include more content for better context but limit to prevent overflow
             context_parts.append(f"- {role}: {content[:150]}...")
     
     return "\n".join(context_parts)

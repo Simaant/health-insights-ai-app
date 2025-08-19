@@ -204,77 +204,62 @@ class HealthMarkerDetector:
             }
         }
 
-    def detect_markers(self, text: str) -> List[HealthMarker]:
-        """Detect health markers in the given text with improved flexibility."""
-        detected_markers = []
+    def extract_markers_from_text(self, text: str) -> List[HealthMarker]:
+        """
+        Extract health markers from text with improved pattern matching and dynamic detection.
+        """
+        markers = []
         text_lower = text.lower()
         
-        # First pass: Try exact pattern matching
+        # First, try to extract known markers
         for marker_name, marker_info in self.marker_patterns.items():
-            marker_found = False
-            for pattern in marker_info["patterns"]:
-                if marker_found:
-                    break
-                    
+            patterns = marker_info["patterns"]
+            normal_range = marker_info["normal"]
+            
+            for pattern in patterns:
                 matches = re.finditer(pattern, text_lower, re.IGNORECASE)
                 for match in matches:
                     try:
                         value = float(match.group(1))
-                        unit = match.group(2) if len(match.groups()) > 1 else marker_info["normal"]["unit"]
+                        unit = match.group(2) if len(match.groups()) > 1 else normal_range.get("unit", "")
                         
-                        status = self._determine_status(value, marker_info["normal"])
-                        start = max(0, match.start() - 50)
-                        end = min(len(text), match.end() + 50)
-                        raw_text = text[start:end].strip()
-                        recommendation = self._get_marker_recommendation(marker_name, status)
+                        # Determine status
+                        status = self._determine_status(value, normal_range)
                         
+                        # Create marker
                         marker = HealthMarker(
                             name=marker_name,
                             value=value,
                             unit=unit,
-                            normal_range=marker_info["normal"],
+                            normal_range=normal_range,
                             status=status,
-                            raw_text=raw_text,
-                            recommendation=recommendation
+                            raw_text=match.group(0),
+                            recommendation=self._get_recommendation(marker_name, status)
                         )
-                        detected_markers.append(marker)
-                        marker_found = True
-                        break
-                    except (ValueError, IndexError):
+                        markers.append(marker)
+                    except (ValueError, IndexError) as e:
+                        print(f"Error parsing marker {marker_name}: {e}")
                         continue
         
-        # Second pass: Try flexible matching for common variations
-        # Always run flexible detection to catch unknown markers
-        flexible_markers = self._flexible_detect_markers(text)
+        # Dynamic marker detection for unknown markers
+        dynamic_markers = self._extract_dynamic_markers(text)
+        markers.extend(dynamic_markers)
         
-        # Combine results, avoiding duplicates
-        existing_names = {marker.name.lower() for marker in detected_markers}
-        # Also check for partial matches (e.g., "cholesterol" vs "total cholesterol")
-        existing_words = set()
-        for marker in detected_markers:
-            words = marker.name.lower().split()
-            existing_words.update(words)
-        
-        for marker in flexible_markers:
-            marker_words = set(marker.name.lower().split())
-            # Skip if exact name match or if any word overlaps significantly
-            if (marker.name.lower() not in existing_names and 
-                not any(word in existing_words for word in marker_words if len(word) > 3)):
-                detected_markers.append(marker)
-        
-        return detected_markers
-
-    def _flexible_detect_markers(self, text: str) -> List[HealthMarker]:
-        """Dynamic detection for ANY health markers in ANY format."""
-        detected_markers = []
+        return markers
+    
+    def _extract_dynamic_markers(self, text: str) -> List[HealthMarker]:
+        """
+        Extract markers that are not in the predefined patterns but follow common formats.
+        """
+        markers = []
         text_lower = text.lower()
         
-        # Dynamic pattern to find ANY marker name followed by a number
-        # This will catch patterns like: "marker: value", "marker = value", "marker value", etc.
+        # Pattern for dynamic marker detection
+        # Matches: "marker_name: value unit" or "marker_name = value unit"
         dynamic_patterns = [
-            r'([^:]+):\s*(\d+\.?\d*)\s*([a-zA-Z/%]+)?',  # "marker: value unit"
-            r'([^=]+)=\s*(\d+\.?\d*)\s*([a-zA-Z/%]+)?',  # "marker = value unit"
-            r'([a-zA-Z][a-zA-Z\s]*)\s+(\d+\.?\d*)\s*([a-zA-Z/%]+)?',  # "marker value unit"
+            r"([a-zA-Z\s]+)[:\s=]+(\d+\.?\d*)\s*([a-zA-Z/%]+)",
+            r"([a-zA-Z\s]+)[:\s=]+(\d+\.?\d*)\s*(mg/dL|ng/mL|pg/mL|mEq/L|U/L|%|mmol/L)",
+            r"([a-zA-Z\s]+)[:\s=]+(\d+\.?\d*)\s*(mg/dl|ng/ml|pg/ml|meq/l|u/l|mmol/l)"
         ]
         
         for pattern in dynamic_patterns:
@@ -283,503 +268,94 @@ class HealthMarkerDetector:
                 try:
                     marker_name = match.group(1).strip()
                     value = float(match.group(2))
-                    unit = match.group(3) if match.group(3) else self._guess_unit(marker_name)
+                    unit = match.group(3)
                     
-                    # Clean up marker name
-                    marker_name = re.sub(r'[,\s]+', ' ', marker_name).strip()
-                    
-                    # Skip if it's not a health marker (too short, common words, etc.)
-                    if len(marker_name) < 3 or marker_name in ['normal', 'range', 'value', 'test', 'result', 'reference']:
+                    # Skip if it's a known marker (already processed)
+                    if any(marker_name.lower() in known_marker.lower() for known_marker in self.marker_patterns.keys()):
                         continue
                     
-                    # Create a dynamic marker
-                    marker = self._create_dynamic_marker(marker_name, value, unit, text)
-                    if marker:
-                        detected_markers.append(marker)
-                        
-                except (ValueError, IndexError):
-                    continue
-        
-        return detected_markers
-        
-        # Look for number patterns near marker names
-        number_pattern = r'(\d+\.?\d*)'
-        
-        for variation, marker_name in variations.items():
-            if variation in text_lower and marker_name in self.marker_patterns:
-                # Find numbers near the marker name
-                marker_pos = text_lower.find(variation)
-                if marker_pos != -1:
-                    # Look for numbers in a 100-character window around the marker
-                    start = max(0, marker_pos - 50)
-                    end = min(len(text), marker_pos + 50)
-                    window = text_lower[start:end]
+                    # Create dynamic marker with estimated normal range
+                    normal_range = self._estimate_normal_range(marker_name, unit)
+                    status = self._determine_status(value, normal_range)
                     
-                    # Find all numbers in the window
-                    numbers = re.findall(number_pattern, window)
-                    if numbers:
-                        try:
-                            # Try to find the most likely value (usually the first number)
-                            value = float(numbers[0])
-                            marker_info = self.marker_patterns[marker_name]
-                            
-                            # Determine status
-                            status = self._determine_status(value, marker_info["normal"])
-                            
-                            # Get raw text
-                            raw_start = max(0, marker_pos - 30)
-                            raw_end = min(len(text), marker_pos + 30)
-                            raw_text = text[raw_start:raw_end].strip()
-                            
-                            # Get recommendation
-                            recommendation = self._get_marker_recommendation(marker_name, status)
-                            
-                            marker = HealthMarker(
-                                name=marker_name,
-                                value=value,
-                                unit=marker_info["normal"]["unit"],
-                                normal_range=marker_info["normal"],
-                                status=status,
-                                raw_text=raw_text,
-                                recommendation=recommendation
-                            )
-                            detected_markers.append(marker)
-                        except (ValueError, IndexError):
-                            continue
-        
-        return detected_markers
-
-    def _guess_unit(self, marker_name: str) -> str:
-        """Intelligently guess the unit based on marker name."""
-        marker_lower = marker_name.lower()
-        
-        # Common unit patterns
-        if any(word in marker_lower for word in ['glucose', 'sugar', 'cholesterol', 'ldl', 'hdl', 'triglycerides']):
-            return 'mg/dL'
-        elif any(word in marker_lower for word in ['hba1c', 'a1c', 'glycated', 'hematocrit']):
-            return '%'
-        elif any(word in marker_lower for word in ['ferritin', 'troponin', 'bnp']):
-            return 'ng/mL'
-        elif any(word in marker_lower for word in ['creatinine', 'bun']):
-            return 'mg/dL'
-        elif any(word in marker_lower for word in ['hemoglobin', 'albumin']):
-            return 'g/dL'
-        elif any(word in marker_lower for word in ['wbc', 'platelets', 'rbc']):
-            return 'K/µL'
-        elif any(word in marker_lower for word in ['tsh', 't4', 't3']):
-            return 'µIU/mL'
-        elif any(word in marker_lower for word in ['alt', 'ast', 'alkaline']):
-            return 'U/L'
-        else:
-            return 'units'  # Generic fallback
-
-    def _create_dynamic_marker(self, marker_name: str, value: float, unit: str, original_text: str) -> Optional[HealthMarker]:
-        """Create a HealthMarker for dynamically detected markers with improved range detection."""
-        try:
-            # Try to get normal range from RAG system first
-            try:
-                from utils.rag_manager import rag_manager
-                normal_range = rag_manager.get_intelligent_normal_range(marker_name, value, original_text)
-            except ImportError:
-                # Fallback to local method if RAG not available
-                normal_range = self._get_intelligent_normal_range(marker_name, value)
-            
-            # Determine status using the improved normal range
-            status = self._determine_status(value, normal_range)
-            
-            # Get recommendation using RAG knowledge if available
-            try:
-                from utils.rag_manager import rag_manager
-                knowledge = rag_manager.get_marker_knowledge(marker_name)
-                if knowledge:
-                    recommendation = self._get_recommendation_from_knowledge(knowledge, value, status)
-                else:
-                    recommendation = self._get_intelligent_recommendation(marker_name, value, status, normal_range)
-            except ImportError:
-                recommendation = self._get_intelligent_recommendation(marker_name, value, status, normal_range)
-            
-            # Get raw text context
-            marker_pos = original_text.lower().find(marker_name.lower())
-            if marker_pos != -1:
-                start = max(0, marker_pos - 30)
-                end = min(len(original_text), marker_pos + 50)
-                raw_text = original_text[start:end].strip()
-            else:
-                raw_text = f"{marker_name}: {value} {unit}"
-            
-            return HealthMarker(
-                name=marker_name.upper(),
-                value=value,
-                unit=unit,
-                status=status,
-                normal_range=normal_range,
-                raw_text=raw_text,
-                recommendation=recommendation
-            )
-        except Exception as e:
-            print(f"Error creating dynamic marker {marker_name}: {e}")
-            return None
-
-    def _get_recommendation_from_knowledge(self, knowledge: Dict[str, Any], value: float, status: str) -> str:
-        """Get recommendation from RAG knowledge base."""
-        if status == "normal":
-            return f"Your {knowledge['marker']} level is within normal range. Continue maintaining your healthy lifestyle."
-        
-        if status == "low" and knowledge.get("low_treatment"):
-            return f"Your {knowledge['marker']} level is low. {knowledge['low_treatment']}"
-        elif status == "high" and knowledge.get("high_treatment"):
-            return f"Your {knowledge['marker']} level is high. {knowledge['high_treatment']}"
-        else:
-            return f"Your {knowledge['marker']} level may be outside normal ranges. Consult your healthcare provider for proper evaluation and guidance."
-
-    def _extract_normal_range(self, marker_name: str, text: str) -> Optional[Dict[str, float]]:
-        """Extract normal range from text if available."""
-        text_lower = text.lower()
-        marker_lower = marker_name.lower()
-        
-        # Look for patterns like "normal range: 4-6", "reference: 70-100", etc.
-        range_patterns = [
-            r'normal\s+range[:\s]*(\d+\.?\d*)\s*[-–]\s*(\d+\.?\d*)',
-            r'reference[:\s]*(\d+\.?\d*)\s*[-–]\s*(\d+\.?\d*)',
-            r'range[:\s]*(\d+\.?\d*)\s*[-–]\s*(\d+\.?\d*)',
-            r'(\d+\.?\d*)\s*[-–]\s*(\d+\.?\d*)',  # Generic range pattern
-        ]
-        
-        for pattern in range_patterns:
-            matches = re.findall(pattern, text_lower)
-            if matches:
-                try:
-                    min_val, max_val = float(matches[0][0]), float(matches[0][1])
-                    return {"min": min_val, "max": max_val}
-                except (ValueError, IndexError):
+                    marker = HealthMarker(
+                        name=marker_name.title(),
+                        value=value,
+                        unit=unit,
+                        normal_range=normal_range,
+                        status=status,
+                        raw_text=match.group(0),
+                        recommendation=f"Consult your healthcare provider about {marker_name.title()} levels."
+                    )
+                    markers.append(marker)
+                except (ValueError, IndexError) as e:
                     continue
+        
+        return markers
+    
+    def _estimate_normal_range(self, marker_name: str, unit: str) -> Dict[str, float]:
+        """
+        Estimate normal range for unknown markers based on common patterns.
+        """
+        marker_lower = marker_name.lower()
+        
+        # Vitamin patterns
+        if "vitamin" in marker_lower:
+            if "d" in marker_lower:
+                return {"min": 30, "max": 100, "unit": "ng/mL"}
+            elif "b12" in marker_lower or "b 12" in marker_lower:
+                return {"min": 200, "max": 900, "unit": "pg/mL"}
+            else:
+                return {"min": 0, "max": 100, "unit": unit}
+        
+        # Mineral patterns
+        if any(mineral in marker_lower for mineral in ["calcium", "magnesium", "zinc", "copper", "selenium"]):
+            if "calcium" in marker_lower:
+                return {"min": 8.5, "max": 10.5, "unit": "mg/dL"}
+            elif "magnesium" in marker_lower:
+                return {"min": 1.7, "max": 2.2, "unit": "mg/dL"}
+            elif "zinc" in marker_lower:
+                return {"min": 60, "max": 120, "unit": "mcg/dL"}
+            else:
+                return {"min": 0, "max": 100, "unit": unit}
+        
+        # Hormone patterns
+        if any(hormone in marker_lower for hormone in ["tsh", "t3", "t4", "cortisol", "insulin"]):
+            if "tsh" in marker_lower:
+                return {"min": 0.4, "max": 4.0, "unit": "µIU/mL"}
+            elif "t3" in marker_lower:
+                return {"min": 80, "max": 200, "unit": "ng/dL"}
+            elif "t4" in marker_lower:
+                return {"min": 0.8, "max": 1.8, "unit": "µg/dL"}
+            else:
+                return {"min": 0, "max": 100, "unit": unit}
+        
+        # Default estimation
+        return {"min": 0, "max": 100, "unit": unit}
+    
+    def add_custom_marker_pattern(self, marker_name: str, patterns: List[str], normal_range: Dict[str, float], aliases: List[str] = None):
+        """
+        Add a custom marker pattern for dynamic marker detection.
+        """
+        self.marker_patterns[marker_name] = {
+            "patterns": patterns,
+            "normal": normal_range,
+            "aliases": aliases or []
+        }
+    
+    def get_marker_by_name(self, marker_name: str) -> Optional[Dict]:
+        """
+        Get marker information by name (case-insensitive).
+        """
+        marker_name_lower = marker_name.lower()
+        
+        # Direct match
+        if marker_name in self.marker_patterns:
+            return self.marker_patterns[marker_name]
+        
+        # Alias match
+        for name, info in self.marker_patterns.items():
+            if marker_name_lower in name.lower() or any(alias.lower() == marker_name_lower for alias in info.get("aliases", [])):
+                return info
         
         return None
-
-    def _get_intelligent_normal_range(self, marker_name: str, value: float) -> Dict[str, float]:
-        """Intelligently estimate normal range based on marker name and value."""
-        marker_lower = marker_name.lower()
-        
-        # Common normal ranges based on marker type
-        if any(word in marker_lower for word in ['glucose', 'sugar']):
-            return {"min": 70, "max": 100}
-        elif any(word in marker_lower for word in ['hba1c', 'a1c', 'glycated']):
-            return {"min": 4.0, "max": 5.6}
-        elif any(word in marker_lower for word in ['cholesterol', 'ldl']):
-            return {"max": 100}
-        elif any(word in marker_lower for word in ['hdl']):
-            return {"min": 40}
-        elif any(word in marker_lower for word in ['triglycerides']):
-            return {"max": 150}
-        elif any(word in marker_lower for word in ['ferritin']):
-            return {"min": 38, "max": 380}
-        elif any(word in marker_lower for word in ['creatinine']):
-            return {"min": 0.6, "max": 1.2}
-        elif any(word in marker_lower for word in ['hemoglobin']):
-            return {"min": 12, "max": 16}
-        elif any(word in marker_lower for word in ['hematocrit']):
-            return {"min": 36, "max": 46}
-        elif any(word in marker_lower for word in ['wbc']):
-            return {"min": 4.5, "max": 11.0}
-        elif any(word in marker_lower for word in ['platelets']):
-            return {"min": 150, "max": 450}
-        elif any(word in marker_lower for word in ['tsh']):
-            return {"min": 0.4, "max": 4.0}
-        elif any(word in marker_lower for word in ['magnesium']):
-            return {"min": 1.7, "max": 2.2}
-        elif any(word in marker_lower for word in ['calcium']):
-            return {"min": 8.5, "max": 10.5}
-        elif any(word in marker_lower for word in ['potassium']):
-            return {"min": 3.5, "max": 5.0}
-        elif any(word in marker_lower for word in ['sodium']):
-            return {"min": 135, "max": 145}
-        elif any(word in marker_lower for word in ['zinc']):
-            return {"min": 60, "max": 120}
-        elif any(word in marker_lower for word in ['copper']):
-            return {"min": 70, "max": 140}
-        elif any(word in marker_lower for word in ['selenium']):
-            return {"min": 70, "max": 150}
-        elif any(word in marker_lower for word in ['iron']):
-            return {"min": 60, "max": 170}
-        elif any(word in marker_lower for word in ['bun']):
-            return {"min": 7, "max": 20}
-        elif any(word in marker_lower for word in ['albumin']):
-            return {"min": 3.4, "max": 5.4}
-        elif any(word in marker_lower for word in ['bilirubin']):
-            return {"min": 0.3, "max": 1.2}
-        elif any(word in marker_lower for word in ['alt']):
-            return {"min": 7, "max": 55}
-        elif any(word in marker_lower for word in ['ast']):
-            return {"min": 8, "max": 48}
-        elif any(word in marker_lower for word in ['alkaline phosphatase']):
-            return {"min": 44, "max": 147}
-        elif any(word in marker_lower for word in ['rdw']):
-            return {"min": 11.5, "max": 14.5}
-        elif any(word in marker_lower for word in ['mcv']):
-            return {"min": 80, "max": 100}
-        elif any(word in marker_lower for word in ['mch']):
-            return {"min": 27, "max": 32}
-        elif any(word in marker_lower for word in ['mchc']):
-            return {"min": 32, "max": 36}
-        else:
-            # For unknown markers, use more sophisticated estimation based on value characteristics
-            return self._estimate_range_for_unknown_marker(marker_name, value)
-
-    def _estimate_range_for_unknown_marker(self, marker_name: str, value: float) -> Dict[str, float]:
-        """Estimate normal range for unknown markers using sophisticated heuristics."""
-        marker_lower = marker_name.lower()
-        
-        # Check for common patterns in marker names
-        if any(word in marker_lower for word in ['vitamin', 'vit']):
-            # Vitamin markers typically have ranges like 20-100 or 200-900
-            if value < 50:
-                return {"min": 20, "max": 100}
-            elif value < 500:
-                return {"min": 200, "max": 900}
-            else:
-                return {"min": 500, "max": 2000}
-        
-        elif any(word in marker_lower for word in ['hormone', 'testosterone', 'estrogen', 'progesterone']):
-            # Hormone markers have varying ranges
-            if value < 10:
-                return {"min": 1, "max": 10}
-            elif value < 100:
-                return {"min": 10, "max": 100}
-            else:
-                return {"min": 100, "max": 1000}
-        
-        elif any(word in marker_lower for word in ['enzyme', 'protein', 'albumin', 'globulin']):
-            # Enzyme/protein markers
-            if value < 10:
-                return {"min": 1, "max": 10}
-            elif value < 100:
-                return {"min": 10, "max": 100}
-            else:
-                return {"min": 100, "max": 500}
-        
-        elif any(word in marker_lower for word in ['mineral', 'electrolyte', 'phosphate', 'chloride']):
-            # Mineral/electrolyte markers
-            if value < 10:
-                return {"min": 1, "max": 10}
-            elif value < 100:
-                return {"min": 10, "max": 150}
-            else:
-                return {"min": 100, "max": 200}
-        
-        elif any(word in marker_lower for word in ['antibody', 'immunoglobulin', 'iga', 'igg', 'igm']):
-            # Antibody markers
-            if value < 100:
-                return {"min": 10, "max": 100}
-            elif value < 1000:
-                return {"min": 100, "max": 1000}
-            else:
-                return {"min": 1000, "max": 5000}
-        
-        else:
-            # Default estimation based on value magnitude with more reasonable ranges
-            if value < 0.1:
-                return {"min": 0, "max": 0.1}
-            elif value < 1:
-                return {"min": 0.1, "max": 1}
-            elif value < 10:
-                return {"min": 1, "max": 10}
-            elif value < 100:
-                return {"min": 10, "max": 100}
-            elif value < 1000:
-                return {"min": 100, "max": 1000}
-            else:
-                # For very high values, use a more conservative approach
-                return {"min": 0, "max": value * 1.5}
-
-    def _get_intelligent_recommendation(self, marker_name: str, value: float, status: str, normal_range: Dict[str, float]) -> str:
-        """Generate intelligent recommendations for ANY marker."""
-        if status == "normal":
-            return f"Your {marker_name} level is within normal range. Continue maintaining your healthy lifestyle."
-        
-        # Get the normal range for context
-        min_val = normal_range.get('min')
-        max_val = normal_range.get('max')
-        
-        if status == "high":
-            if max_val:
-                return f"Your {marker_name} level of {value} is above the normal range (max: {max_val}). Consider lifestyle changes and consult your healthcare provider for personalized guidance."
-            else:
-                return f"Your {marker_name} level of {value} appears elevated. Consult your healthcare provider for evaluation and personalized recommendations."
-        
-        elif status == "low":
-            if min_val:
-                return f"Your {marker_name} level of {value} is below the normal range (min: {min_val}). Consider dietary changes and consult your healthcare provider for evaluation."
-            else:
-                return f"Your {marker_name} level of {value} appears low. Consult your healthcare provider for evaluation and personalized recommendations."
-        
-        else:
-            return f"Your {marker_name} level of {value} may be outside normal ranges. Consult your healthcare provider for proper evaluation and guidance."
-
-    def _determine_status(self, value: float, normal_range: Dict[str, float]) -> str:
-        """Determine if a value is normal, low, high, or critical."""
-        min_val = normal_range.get("min")
-        max_val = normal_range.get("max")
-        
-        if min_val is not None and max_val is not None:
-            if value < min_val:
-                return "low"
-            elif value > max_val:
-                return "high"
-            else:
-                return "normal"
-        elif min_val is not None:
-            if value < min_val:
-                return "low"
-            else:
-                return "normal"
-        elif max_val is not None:
-            if value > max_val:
-                return "high"
-            else:
-                return "normal"
-        else:
-            return "unknown"
-
-    def _get_marker_recommendation(self, marker_name: str, status: str) -> str:
-        """Get a recommendation for a specific marker and status."""
-        if status == "normal":
-            return ""
-            
-        if marker_name == "FERRITIN" and status == "low":
-            return (
-                "Low ferritin levels indicate iron deficiency. Recommendations: "
-                "1) Increase iron-rich foods (red meat, spinach, beans, fortified cereals), "
-                "2) Consider iron supplements under medical supervision, "
-                "3) Avoid coffee/tea with meals as they inhibit iron absorption, "
-                "4) Include vitamin C-rich foods to enhance iron absorption, "
-                "5) Consult your doctor for proper iron supplementation."
-            )
-        elif marker_name in ["LDL", "Total Cholesterol"] and status == "high":
-            return (
-                "High cholesterol levels increase cardiovascular risk. Recommendations: "
-                "1) Reduce saturated and trans fats in your diet, "
-                "2) Increase fiber intake (oats, fruits, vegetables), "
-                "3) Exercise regularly (150 minutes/week), "
-                "4) Maintain a healthy weight, "
-                "5) Consider medication if lifestyle changes aren't sufficient."
-            )
-        elif marker_name == "HDL" and status == "low":
-            return (
-                "Low HDL cholesterol increases cardiovascular risk. Recommendations: "
-                "1) Exercise regularly (aerobic activity), "
-                "2) Quit smoking if applicable, "
-                "3) Include healthy fats (olive oil, nuts, avocados), "
-                "4) Limit refined carbohydrates, "
-                "5) Consider omega-3 supplements."
-            )
-        elif marker_name == "Glucose" and status == "high":
-            return (
-                "High glucose levels may indicate prediabetes or diabetes. Recommendations: "
-                "1) Reduce refined carbohydrates and sugars, "
-                "2) Exercise regularly, "
-                "3) Maintain a healthy weight, "
-                "4) Monitor blood sugar levels, "
-                "5) Consult your doctor for proper diabetes management."
-            )
-        elif marker_name == "TSH" and status == "high":
-            return (
-                "High TSH levels may indicate hypothyroidism. Recommendations: "
-                "1) Consult your doctor for thyroid function evaluation, "
-                "2) Consider thyroid hormone replacement therapy, "
-                "3) Maintain a balanced diet with adequate iodine, "
-                "4) Regular thyroid function monitoring, "
-                "5) Address any underlying causes."
-            )
-        elif marker_name == "TSH" and status == "low":
-            return (
-                "Low TSH levels may indicate hyperthyroidism. Recommendations: "
-                "1) Consult your doctor for thyroid function evaluation, "
-                "2) Consider anti-thyroid medications if needed, "
-                "3) Monitor for symptoms of hyperthyroidism, "
-                "4) Regular thyroid function monitoring, "
-                "5) Address any underlying causes."
-            )
-        else:
-            return f"Abnormal {marker_name} levels detected. Please consult your healthcare provider for personalized recommendations."
-
-    def get_recommendations(self, markers: List[HealthMarker]) -> Dict[str, str]:
-        """Get recommendations based on detected markers."""
-        recommendations = {}
-        
-        for marker in markers:
-            if marker.status == "normal":
-                continue
-                
-            if marker.name == "FERRITIN" and marker.status == "low":
-                recommendations[marker.name] = (
-                    "Low ferritin levels indicate iron deficiency. Recommendations: "
-                    "1) Increase iron-rich foods (red meat, spinach, beans, fortified cereals), "
-                    "2) Consider iron supplements under medical supervision, "
-                    "3) Avoid coffee/tea with meals as they inhibit iron absorption, "
-                    "4) Include vitamin C-rich foods to enhance iron absorption, "
-                    "5) Consult your doctor for proper iron supplementation."
-                )
-            elif marker.name in ["LDL", "Total Cholesterol"] and marker.status == "high":
-                recommendations[marker.name] = (
-                    "High cholesterol levels increase cardiovascular risk. Recommendations: "
-                    "1) Reduce saturated and trans fats in your diet, "
-                    "2) Increase fiber intake (oats, fruits, vegetables), "
-                    "3) Exercise regularly (150 minutes/week), "
-                    "4) Maintain a healthy weight, "
-                    "5) Consider medication if lifestyle changes aren't sufficient."
-                )
-            elif marker.name == "HDL" and marker.status == "low":
-                recommendations[marker.name] = (
-                    "Low HDL cholesterol increases cardiovascular risk. Recommendations: "
-                    "1) Exercise regularly (aerobic activity), "
-                    "2) Quit smoking if applicable, "
-                    "3) Include healthy fats (olive oil, nuts, avocados), "
-                    "4) Limit refined carbohydrates, "
-                    "5) Consider omega-3 supplements."
-                )
-            elif marker.name == "Glucose" and marker.status == "high":
-                recommendations[marker.name] = (
-                    "High blood glucose may indicate prediabetes or diabetes. Recommendations: "
-                    "1) Monitor carbohydrate intake, "
-                    "2) Exercise regularly, "
-                    "3) Maintain a healthy weight, "
-                    "4) Follow a balanced diet, "
-                    "5) Consult your doctor for proper evaluation and management."
-                )
-            elif marker.name == "Vitamin D" and marker.status == "low":
-                recommendations[marker.name] = (
-                    "Low vitamin D levels can affect bone health and immunity. Recommendations: "
-                    "1) Get 10-30 minutes of sun exposure daily, "
-                    "2) Include vitamin D-rich foods (fatty fish, egg yolks, fortified dairy), "
-                    "3) Consider vitamin D supplements under medical supervision, "
-                    "4) Maintain adequate calcium intake, "
-                    "5) Regular exercise for bone health."
-                )
-            elif marker.name in ["ALT", "AST"] and marker.status == "high":
-                recommendations[marker.name] = (
-                    "Elevated liver enzymes may indicate liver stress. Recommendations: "
-                    "1) Avoid alcohol consumption, "
-                    "2) Maintain a healthy weight, "
-                    "3) Follow a balanced diet low in processed foods, "
-                    "4) Exercise regularly, "
-                    "5) Consult your doctor for further evaluation."
-                )
-            elif marker.name == "Creatinine" and marker.status == "high":
-                recommendations[marker.name] = (
-                    "Elevated creatinine may indicate kidney function issues. Recommendations: "
-                    "1) Stay well hydrated, "
-                    "2) Follow a kidney-friendly diet if recommended, "
-                    "3) Control blood pressure and diabetes, "
-                    "4) Avoid NSAIDs unless prescribed, "
-                    "5) Consult your doctor for proper evaluation."
-                )
-            else:
-                # Generic recommendation for other markers
-                status_text = "high" if marker.status == "high" else "low"
-                recommendations[marker.name] = (
-                    f"Your {marker.name} level is {status_text} ({marker.value} {marker.unit}). "
-                    "Please consult with your healthcare provider for personalized recommendations "
-                    "and to determine if further testing or treatment is needed."
-                )
-        
-        return recommendations
