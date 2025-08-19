@@ -281,3 +281,38 @@ async def delete_chat_session(
     db.commit()
     
     return {"message": "Session deleted successfully"}
+
+@router.post("/test-ai")
+async def test_ai_with_markers(
+    test_data: dict
+):
+    """Test endpoint for AI functionality with specific markers."""
+    try:
+        # Extract test data
+        markers = test_data.get("markers", [])
+        user_message = test_data.get("message", "")
+        chat_history = test_data.get("chat_history", [])
+        user_id = test_data.get("user_id", "test_user")
+        
+        # Generate AI response
+        from utils.agent_manager import run_agent
+        ai_response = run_agent(
+            prompt=user_message,
+            markers=markers if markers else None,
+            chat_history=chat_history if chat_history else None,
+            user_id=user_id
+        )
+        
+        return {
+            "user_message": user_message,
+            "ai_response": ai_response,
+            "markers_used": [m.get("name") for m in markers],
+            "chat_history_length": len(chat_history)
+        }
+        
+    except Exception as e:
+        return {
+            "error": str(e),
+            "user_message": user_message,
+            "markers_used": [m.get("name") for m in markers] if markers else []
+        }

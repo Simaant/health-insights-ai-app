@@ -93,17 +93,43 @@ def _analyze_user_question(prompt: str, markers: Optional[List[Dict[str, Any]]],
     """Analyze user question to understand intent and context."""
     prompt_lower = prompt.lower()
     
-    # Extract mentioned markers from the question
+    # Extract mentioned markers from the question with better matching
     mentioned_markers = []
     if markers:
         for marker in markers:
             marker_name = marker.get("name", "").lower()
             marker_words = marker_name.split()
             
-            # Check for exact match or partial matches
-            if (marker_name in prompt_lower or 
-                any(word in prompt_lower for word in marker_words if len(word) > 2)):
+            # Check for exact match
+            if marker_name in prompt_lower:
                 mentioned_markers.append(marker)
+                continue
+            
+            # Check for partial matches
+            for word in marker_words:
+                if len(word) > 2 and word in prompt_lower:
+                    mentioned_markers.append(marker)
+                    break
+            
+            # Check for synonyms
+            synonyms = _get_marker_synonyms(marker_name)
+            for synonym in synonyms:
+                if synonym in prompt_lower:
+                    mentioned_markers.append(marker)
+                    break
+    
+    # If no markers mentioned in question, check chat history for context
+    if not mentioned_markers and chat_history:
+        recent_messages = chat_history[-3:] if len(chat_history) >= 3 else chat_history
+        for message in recent_messages:
+            content = message.get("content", "").lower()
+            for marker in markers:
+                marker_name = marker.get("name", "").lower()
+                if marker_name in content:
+                    mentioned_markers.append(marker)
+                    break
+            if mentioned_markers:
+                break
     
     # Determine question type
     question_type = "general_info"
@@ -1488,11 +1514,18 @@ def _handle_food_question_enhanced(markers: Optional[List[Dict[str, Any]]], prom
     prompt_lower = question_analysis["prompt_lower"]
     mentioned_markers = question_analysis["mentioned_markers"]
     
+    # Debug logging
+    print(f"DEBUG: Food question - prompt: {prompt}")
+    print(f"DEBUG: Mentioned markers: {[m.get('name') for m in mentioned_markers]}")
+    print(f"DEBUG: All available markers: {[m.get('name') for m in markers or []]}")
+    
     # If specific markers mentioned, provide targeted food advice
     if mentioned_markers:
         target_marker = mentioned_markers[0]
         marker_name = target_marker.get("name", "").lower()
         status = target_marker.get("status", "")
+        
+        print(f"DEBUG: Target marker: {marker_name}, Status: {status}")
         
         if "cholesterol" in marker_name:
             if "low" in status:
@@ -1519,6 +1552,30 @@ def _handle_food_question_enhanced(markers: Optional[List[Dict[str, Any]]], prom
                 return _get_glucose_food_advice_high()
             else:
                 return _get_glucose_food_advice_general()
+    
+    # If no specific markers mentioned, check if we can infer from available markers
+    if markers:
+        # Look for markers that might be relevant to the food question
+        for marker in markers:
+            marker_name = marker.get("name", "").lower()
+            status = marker.get("status", "")
+            
+            # If user asks about foods and has abnormal markers, provide advice for those
+            if status != "normal":
+                if "cholesterol" in marker_name:
+                    if "low" in status:
+                        return _get_cholesterol_food_advice_low()
+                    elif "high" in status:
+                        return _get_cholesterol_food_advice_high()
+                elif "ferritin" in marker_name or "iron" in marker_name:
+                    if "low" in status:
+                        return _get_iron_food_advice_low()
+                elif "vitamin d" in marker_name:
+                    if "low" in status:
+                        return _get_vitamin_d_food_advice_low()
+                elif "glucose" in marker_name or "blood sugar" in marker_name:
+                    if "high" in status:
+                        return _get_glucose_food_advice_high()
     
     # If no specific markers mentioned, provide general advice
     return _get_general_food_advice()

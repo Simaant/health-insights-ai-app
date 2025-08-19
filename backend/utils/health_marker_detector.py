@@ -1,6 +1,6 @@
 import re
 import json
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Tuple, Optional, Any
 from dataclasses import dataclass
 
 @dataclass
@@ -244,8 +244,23 @@ class HealthMarkerDetector:
                         continue
         
         # Second pass: Try flexible matching for common variations
-        if not detected_markers:
-            detected_markers = self._flexible_detect_markers(text)
+        # Always run flexible detection to catch unknown markers
+        flexible_markers = self._flexible_detect_markers(text)
+        
+        # Combine results, avoiding duplicates
+        existing_names = {marker.name.lower() for marker in detected_markers}
+        # Also check for partial matches (e.g., "cholesterol" vs "total cholesterol")
+        existing_words = set()
+        for marker in detected_markers:
+            words = marker.name.lower().split()
+            existing_words.update(words)
+        
+        for marker in flexible_markers:
+            marker_words = set(marker.name.lower().split())
+            # Skip if exact name match or if any word overlaps significantly
+            if (marker.name.lower() not in existing_names and 
+                not any(word in existing_words for word in marker_words if len(word) > 3)):
+                detected_markers.append(marker)
         
         return detected_markers
 
@@ -257,9 +272,9 @@ class HealthMarkerDetector:
         # Dynamic pattern to find ANY marker name followed by a number
         # This will catch patterns like: "marker: value", "marker = value", "marker value", etc.
         dynamic_patterns = [
-            r'([a-zA-Z\s]+)[:\s=]+(\d+\.?\d*)\s*([a-zA-Z/%]+)?',  # "marker: value unit"
-            r'([a-zA-Z\s]+)\s+(\d+\.?\d*)\s*([a-zA-Z/%]+)?',      # "marker value unit"
-            r'([a-zA-Z\s]+)\s*=\s*(\d+\.?\d*)\s*([a-zA-Z/%]+)?',  # "marker = value unit"
+            r'([^:]+):\s*(\d+\.?\d*)\s*([a-zA-Z/%]+)?',  # "marker: value unit"
+            r'([^=]+)=\s*(\d+\.?\d*)\s*([a-zA-Z/%]+)?',  # "marker = value unit"
+            r'([a-zA-Z][a-zA-Z\s]*)\s+(\d+\.?\d*)\s*([a-zA-Z/%]+)?',  # "marker value unit"
         ]
         
         for pattern in dynamic_patterns:
@@ -270,8 +285,11 @@ class HealthMarkerDetector:
                     value = float(match.group(2))
                     unit = match.group(3) if match.group(3) else self._guess_unit(marker_name)
                     
+                    # Clean up marker name
+                    marker_name = re.sub(r'[,\s]+', ' ', marker_name).strip()
+                    
                     # Skip if it's not a health marker (too short, common words, etc.)
-                    if len(marker_name) < 3 or marker_name in ['normal', 'range', 'value', 'test', 'result']:
+                    if len(marker_name) < 3 or marker_name in ['normal', 'range', 'value', 'test', 'result', 'reference']:
                         continue
                     
                     # Create a dynamic marker
@@ -356,38 +374,63 @@ class HealthMarkerDetector:
             return 'units'  # Generic fallback
 
     def _create_dynamic_marker(self, marker_name: str, value: float, unit: str, original_text: str) -> Optional[HealthMarker]:
-        """Create a dynamic marker with intelligent normal range estimation."""
-        # Try to find normal range in the text
-        normal_range = self._extract_normal_range(marker_name, original_text)
+        """Create a HealthMarker for dynamically detected markers with improved range detection."""
+        try:
+            # Try to get normal range from RAG system first
+            try:
+                from utils.rag_manager import rag_manager
+                normal_range = rag_manager.get_intelligent_normal_range(marker_name, value, original_text)
+            except ImportError:
+                # Fallback to local method if RAG not available
+                normal_range = self._get_intelligent_normal_range(marker_name, value)
+            
+            # Determine status using the improved normal range
+            status = self._determine_status(value, normal_range)
+            
+            # Get recommendation using RAG knowledge if available
+            try:
+                from utils.rag_manager import rag_manager
+                knowledge = rag_manager.get_marker_knowledge(marker_name)
+                if knowledge:
+                    recommendation = self._get_recommendation_from_knowledge(knowledge, value, status)
+                else:
+                    recommendation = self._get_intelligent_recommendation(marker_name, value, status, normal_range)
+            except ImportError:
+                recommendation = self._get_intelligent_recommendation(marker_name, value, status, normal_range)
+            
+            # Get raw text context
+            marker_pos = original_text.lower().find(marker_name.lower())
+            if marker_pos != -1:
+                start = max(0, marker_pos - 30)
+                end = min(len(original_text), marker_pos + 50)
+                raw_text = original_text[start:end].strip()
+            else:
+                raw_text = f"{marker_name}: {value} {unit}"
+            
+            return HealthMarker(
+                name=marker_name.upper(),
+                value=value,
+                unit=unit,
+                status=status,
+                normal_range=normal_range,
+                raw_text=raw_text,
+                recommendation=recommendation
+            )
+        except Exception as e:
+            print(f"Error creating dynamic marker {marker_name}: {e}")
+            return None
+
+    def _get_recommendation_from_knowledge(self, knowledge: Dict[str, Any], value: float, status: str) -> str:
+        """Get recommendation from RAG knowledge base."""
+        if status == "normal":
+            return f"Your {knowledge['marker']} level is within normal range. Continue maintaining your healthy lifestyle."
         
-        # If no normal range found, use intelligent defaults
-        if not normal_range:
-            normal_range = self._get_intelligent_normal_range(marker_name, value)
-        
-        # Determine status
-        status = self._determine_status(value, normal_range)
-        
-        # Get raw text context
-        marker_pos = original_text.lower().find(marker_name.lower())
-        if marker_pos != -1:
-            start = max(0, marker_pos - 30)
-            end = min(len(original_text), marker_pos + 50)
-            raw_text = original_text[start:end].strip()
+        if status == "low" and knowledge.get("low_treatment"):
+            return f"Your {knowledge['marker']} level is low. {knowledge['low_treatment']}"
+        elif status == "high" and knowledge.get("high_treatment"):
+            return f"Your {knowledge['marker']} level is high. {knowledge['high_treatment']}"
         else:
-            raw_text = f"{marker_name}: {value} {unit}"
-        
-        # Generate intelligent recommendation
-        recommendation = self._get_intelligent_recommendation(marker_name, value, status, normal_range)
-        
-        return HealthMarker(
-            name=marker_name.title(),  # Proper case
-            value=value,
-            unit=unit,
-            normal_range=normal_range,
-            status=status,
-            raw_text=raw_text,
-            recommendation=recommendation
-        )
+            return f"Your {knowledge['marker']} level may be outside normal ranges. Consult your healthcare provider for proper evaluation and guidance."
 
     def _extract_normal_range(self, marker_name: str, text: str) -> Optional[Dict[str, float]]:
         """Extract normal range from text if available."""
@@ -442,16 +485,111 @@ class HealthMarkerDetector:
             return {"min": 150, "max": 450}
         elif any(word in marker_lower for word in ['tsh']):
             return {"min": 0.4, "max": 4.0}
+        elif any(word in marker_lower for word in ['magnesium']):
+            return {"min": 1.7, "max": 2.2}
+        elif any(word in marker_lower for word in ['calcium']):
+            return {"min": 8.5, "max": 10.5}
+        elif any(word in marker_lower for word in ['potassium']):
+            return {"min": 3.5, "max": 5.0}
+        elif any(word in marker_lower for word in ['sodium']):
+            return {"min": 135, "max": 145}
+        elif any(word in marker_lower for word in ['zinc']):
+            return {"min": 60, "max": 120}
+        elif any(word in marker_lower for word in ['copper']):
+            return {"min": 70, "max": 140}
+        elif any(word in marker_lower for word in ['selenium']):
+            return {"min": 70, "max": 150}
+        elif any(word in marker_lower for word in ['iron']):
+            return {"min": 60, "max": 170}
+        elif any(word in marker_lower for word in ['bun']):
+            return {"min": 7, "max": 20}
+        elif any(word in marker_lower for word in ['albumin']):
+            return {"min": 3.4, "max": 5.4}
+        elif any(word in marker_lower for word in ['bilirubin']):
+            return {"min": 0.3, "max": 1.2}
+        elif any(word in marker_lower for word in ['alt']):
+            return {"min": 7, "max": 55}
+        elif any(word in marker_lower for word in ['ast']):
+            return {"min": 8, "max": 48}
+        elif any(word in marker_lower for word in ['alkaline phosphatase']):
+            return {"min": 44, "max": 147}
+        elif any(word in marker_lower for word in ['rdw']):
+            return {"min": 11.5, "max": 14.5}
+        elif any(word in marker_lower for word in ['mcv']):
+            return {"min": 80, "max": 100}
+        elif any(word in marker_lower for word in ['mch']):
+            return {"min": 27, "max": 32}
+        elif any(word in marker_lower for word in ['mchc']):
+            return {"min": 32, "max": 36}
         else:
-            # For unknown markers, estimate based on value magnitude
-            if value < 1:
-                return {"min": 0, "max": 1}
-            elif value < 10:
-                return {"min": 0, "max": 10}
-            elif value < 100:
-                return {"min": 0, "max": 100}
+            # For unknown markers, use more sophisticated estimation based on value characteristics
+            return self._estimate_range_for_unknown_marker(marker_name, value)
+
+    def _estimate_range_for_unknown_marker(self, marker_name: str, value: float) -> Dict[str, float]:
+        """Estimate normal range for unknown markers using sophisticated heuristics."""
+        marker_lower = marker_name.lower()
+        
+        # Check for common patterns in marker names
+        if any(word in marker_lower for word in ['vitamin', 'vit']):
+            # Vitamin markers typically have ranges like 20-100 or 200-900
+            if value < 50:
+                return {"min": 20, "max": 100}
+            elif value < 500:
+                return {"min": 200, "max": 900}
             else:
-                return {"min": 0, "max": value * 2}  # Conservative estimate
+                return {"min": 500, "max": 2000}
+        
+        elif any(word in marker_lower for word in ['hormone', 'testosterone', 'estrogen', 'progesterone']):
+            # Hormone markers have varying ranges
+            if value < 10:
+                return {"min": 1, "max": 10}
+            elif value < 100:
+                return {"min": 10, "max": 100}
+            else:
+                return {"min": 100, "max": 1000}
+        
+        elif any(word in marker_lower for word in ['enzyme', 'protein', 'albumin', 'globulin']):
+            # Enzyme/protein markers
+            if value < 10:
+                return {"min": 1, "max": 10}
+            elif value < 100:
+                return {"min": 10, "max": 100}
+            else:
+                return {"min": 100, "max": 500}
+        
+        elif any(word in marker_lower for word in ['mineral', 'electrolyte', 'phosphate', 'chloride']):
+            # Mineral/electrolyte markers
+            if value < 10:
+                return {"min": 1, "max": 10}
+            elif value < 100:
+                return {"min": 10, "max": 150}
+            else:
+                return {"min": 100, "max": 200}
+        
+        elif any(word in marker_lower for word in ['antibody', 'immunoglobulin', 'iga', 'igg', 'igm']):
+            # Antibody markers
+            if value < 100:
+                return {"min": 10, "max": 100}
+            elif value < 1000:
+                return {"min": 100, "max": 1000}
+            else:
+                return {"min": 1000, "max": 5000}
+        
+        else:
+            # Default estimation based on value magnitude with more reasonable ranges
+            if value < 0.1:
+                return {"min": 0, "max": 0.1}
+            elif value < 1:
+                return {"min": 0.1, "max": 1}
+            elif value < 10:
+                return {"min": 1, "max": 10}
+            elif value < 100:
+                return {"min": 10, "max": 100}
+            elif value < 1000:
+                return {"min": 100, "max": 1000}
+            else:
+                # For very high values, use a more conservative approach
+                return {"min": 0, "max": value * 1.5}
 
     def _get_intelligent_recommendation(self, marker_name: str, value: float, status: str, normal_range: Dict[str, float]) -> str:
         """Generate intelligent recommendations for ANY marker."""
