@@ -120,7 +120,7 @@ async def debug_ocr(
                 )
         
         # Try to detect markers
-        detected_markers = marker_detector.detect_markers(text_content)
+        detected_markers = marker_detector.extract_markers_from_text(text_content)
         
         return {
             "extracted_text": text_content,
@@ -161,7 +161,7 @@ async def debug_text(
             )
         
         # Try to detect markers
-        detected_markers = marker_detector.detect_markers(text_content)
+        detected_markers = marker_detector.extract_markers_from_text(text_content)
         
         return {
             "extractedText": text_content,
@@ -205,7 +205,7 @@ async def upload_report(
             report_filename = filename or "Manual Entry"
             
             # Use the new marker detector for manual entry
-            detected_markers = marker_detector.detect_markers(text)
+            detected_markers = marker_detector.extract_markers_from_text(text)
             
             # Convert to the expected format
             extracted = {}
@@ -254,7 +254,7 @@ async def upload_report(
             text = ocr_any(file_bytes, filename=file.filename or "", content_type=file.content_type)
             
             # Parse markers using the new detector
-            detected_markers = marker_detector.detect_markers(text)
+            detected_markers = marker_detector.extract_markers_from_text(text)
             
             # Convert to the expected format
             extracted = {}
