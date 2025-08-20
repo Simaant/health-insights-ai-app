@@ -359,3 +359,30 @@ class HealthMarkerDetector:
                 return info
         
         return None
+    
+    def _determine_status(self, value: float, normal_range: Dict[str, float]) -> str:
+        """
+        Determine the status (low, normal, high) based on value and normal range.
+        """
+        min_val = normal_range.get("min", 0)
+        max_val = normal_range.get("max", 100)
+        
+        if value < min_val:
+            return "low"
+        elif value > max_val:
+            return "high"
+        else:
+            return "normal"
+    
+    def _get_recommendation(self, marker_name: str, status: str) -> str:
+        """
+        Get recommendation based on marker name and status.
+        """
+        if status == "normal":
+            return f"Your {marker_name} levels are within normal range. Continue maintaining a healthy lifestyle."
+        elif status == "low":
+            return f"Your {marker_name} levels are low. Consider dietary changes and consult your healthcare provider."
+        elif status == "high":
+            return f"Your {marker_name} levels are high. Consult your healthcare provider for guidance."
+        else:
+            return f"Consult your healthcare provider about your {marker_name} levels."
